@@ -1,2 +1,5 @@
-// Placeholder for digital card UI template definitions
-export {};
+/**
+ * Digital Card Templates Barrel Export
+ */
+
+export * from '../theme/templates';

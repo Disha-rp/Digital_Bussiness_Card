@@ -8,7 +8,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
-import { useAuth } from '../store/authStore';
+import { useAuth } from '../store';
 
 // Screens
 import { LoginScreen } from '../screens/LoginScreen';

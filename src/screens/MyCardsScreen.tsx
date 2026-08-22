@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { RootNavigationProp } from '../types/navigation';
-import { useAuth } from '../store/authStore';
+import { useAuth } from '../store';
 import { colors, theme } from '../theme';
 
 export const MyCardsScreen: React.FC = () => {

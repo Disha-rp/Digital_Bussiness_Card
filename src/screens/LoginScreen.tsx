@@ -6,7 +6,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../store/authStore';
+import { useAuth } from '../store';
 import { colors, theme } from '../theme';
 
 export const LoginScreen: React.FC = () => {
@@ -28,7 +28,7 @@ export const LoginScreen: React.FC = () => {
             Tap below to authenticate and enter the protected application navigation stack.
           </Text>
 
-          <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={login}>
+          <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={() => login()}>
             <Ionicons name="log-in-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={styles.buttonText}>Log In (Enter App)</Text>
           </TouchableOpacity>

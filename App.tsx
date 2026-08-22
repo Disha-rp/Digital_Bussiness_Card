@@ -1,20 +1,20 @@
 /**
- * Application Root Component (Phase 1 Foundation)
+ * Application Root Component (Phase 2 Architecture)
  */
 
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from './src/store/authStore';
+import { AppStoreProvider } from './src/store';
 import { RootNavigator } from './src/navigation/RootNavigator';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
+      <AppStoreProvider>
         <StatusBar style="light" />
         <RootNavigator />
-      </AuthProvider>
+      </AppStoreProvider>
     </SafeAreaProvider>
   );
 }
