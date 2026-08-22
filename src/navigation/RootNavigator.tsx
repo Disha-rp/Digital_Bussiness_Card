@@ -1,14 +1,17 @@
 /**
  * Root Application Navigator
- * Implements the protected navigation flow:
- * Login -> My Cards -> Create Card -> Choose Template -> Edit Card -> Preview -> Share
+ * Implements protected navigation flow:
+ * - Unauthenticated: Login (Organization API Credentials)
+ * - Authenticated: My Cards -> Create Card -> Choose Template -> Edit Card -> Preview -> Share
  */
 
 import React from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { useAuth } from '../store';
+import { colors } from '../theme';
 
 // Screens
 import { LoginScreen } from '../screens/LoginScreen';
@@ -22,7 +25,15 @@ import { ShareScreen } from '../screens/ShareScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
@@ -30,7 +41,7 @@ export const RootNavigator: React.FC = () => {
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
-          contentStyle: { backgroundColor: '#090D16' },
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
         {!isAuthenticated ? (
@@ -51,3 +62,12 @@ export const RootNavigator: React.FC = () => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
