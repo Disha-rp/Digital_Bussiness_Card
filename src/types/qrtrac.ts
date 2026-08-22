@@ -112,6 +112,18 @@ export interface QrTracQr extends QrTracVCardPayloadFields {
 }
 
 /**
+ * Query parameters for paginated QR listing
+ * Endpoint: GET /qrs-api/v2/teams/{teamId}
+ */
+export interface QrListQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
  * Standard QRTRAC response envelope
  */
 export interface QrTracResponse<T> {

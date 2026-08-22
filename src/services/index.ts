@@ -1,2 +1,6 @@
-// Placeholder for Phase 2 services
-export {};
+/**
+ * Services Barrel Export
+ */
+
+export * from './mapper';
+export * from './qr.service';

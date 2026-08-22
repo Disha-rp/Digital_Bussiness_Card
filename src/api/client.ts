@@ -1,10 +1,11 @@
 /**
- * Centralized QRTRAC API Client Abstraction
- * Handles request configuration, header injection, timeout, retry strategy,
- * rate limit handling, error normalization, and development-only logging.
+ * Centralized QRTRAC API Client
+ * Production-ready HTTP client communicating with https://api.qrtrac.com/api
  *
- * NOTE: Phase 2 defines the architecture and abstraction.
- * No live API network requests or credentials are sent in Phase 2.
+ * Security Constraints:
+ * - Never hardcodes or logs secrets (Client Secret, Client ID, Team ID).
+ * - Normalizes all errors into user-friendly messages without leaking sensitive internals.
+ * - Supports timeout, retries with exponential backoff, and rate-limit parsing.
  */
 
 import { ApiError, ApiErrorType, ApiResponse } from '../models/api';
@@ -36,8 +37,8 @@ export class ApiClient {
     maxRetries?: number;
   } = {}) {
     this.defaultBaseUrl = config.baseUrl || 'https://api.qrtrac.com/api';
-    this.defaultTimeoutMs = config.timeoutMs || 10000;
-    this.maxRetries = config.maxRetries || 2;
+    this.defaultTimeoutMs = config.timeoutMs !== undefined ? config.timeoutMs : 10000;
+    this.maxRetries = config.maxRetries !== undefined ? config.maxRetries : 2;
   }
 
   public setCredentials(credentials: QrTracCredentials | null): void {
@@ -53,7 +54,8 @@ export class ApiClient {
   }
 
   /**
-   * Log messages in development mode only
+   * Safe logger: logs only method and sanitized URL in development.
+   * NEVER logs headers or secrets.
    */
   private log(message: string, ...args: unknown[]): void {
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -62,7 +64,7 @@ export class ApiClient {
   }
 
   /**
-   * Log errors in development mode only
+   * Safe error logger in development.
    */
   private logError(message: string, ...args: unknown[]): void {
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -111,7 +113,8 @@ export class ApiClient {
   }
 
   /**
-   * Normalize response headers, including rate limit telemetry
+   * Parse rate limit response headers:
+   * X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
    */
   private parseRateLimitHeaders(headers: Headers): void {
     const limit = headers.get('X-RateLimit-Limit');
@@ -128,44 +131,58 @@ export class ApiClient {
   }
 
   /**
-   * Standardize and normalize API errors
+   * Standardize and normalize API errors into user-friendly messages.
+   * Ensures no sensitive details (Client Secret, tokens) are exposed.
    */
   public normalizeError(error: unknown, statusCode?: number, responseData?: unknown): ApiError {
     let type: ApiErrorType = 'UNKNOWN_ERROR';
-    let message = 'An unexpected error occurred.';
+    let message = 'An unexpected error occurred. Please try again.';
     let isRetryable = false;
     let retryAfterSeconds: number | undefined;
 
-    if (statusCode === 401) {
+    const rawMessage = (responseData as { message?: string })?.message;
+
+    if (statusCode === 400) {
+      type = 'VALIDATION_ERROR';
+      if (rawMessage?.toLowerCase().includes('displayid') || rawMessage?.toLowerCase().includes('slug')) {
+        message = 'Display ID is invalid or already taken. Please choose a different slug.';
+      } else if (rawMessage?.toLowerCase().includes('limit')) {
+        message = 'Card limit reached for this team account.';
+      } else {
+        message = rawMessage || 'Invalid request. Please verify the card details.';
+      }
+    } else if (statusCode === 401) {
       type = 'AUTHENTICATION_ERROR';
-      message = 'Invalid Client ID or Client Secret. Please verify your credentials.';
+      message = 'Unauthorized: Invalid API credentials. Please check your Client ID and Client Secret.';
     } else if (statusCode === 403) {
       type = 'FORBIDDEN_ERROR';
-      message = 'Access forbidden: Business Plus plan upgrade or Admin role required.';
+      message = 'Permission denied: A Business Plus plan or Admin role is required for API access.';
     } else if (statusCode === 404) {
       type = 'NOT_FOUND_ERROR';
-      message = 'The requested QR or resource was not found.';
+      message = 'The requested card or QR code was not found.';
     } else if (statusCode === 429) {
       type = 'RATE_LIMIT_ERROR';
-      message = 'QRTRAC API rate limit reached. Please wait before making more requests.';
+      message = 'Rate limit reached. Please wait a moment before sending more requests.';
       isRetryable = true;
       retryAfterSeconds = 5;
-    } else if (statusCode && statusCode >= 400 && statusCode < 500) {
-      type = 'VALIDATION_ERROR';
-      message =
-        (responseData as { message?: string })?.message ||
-        `Validation error (${statusCode}). Please verify the input payload.`;
     } else if (statusCode && statusCode >= 500) {
       type = 'SERVER_ERROR';
-      message = 'QRTRAC server error. Please retry shortly.';
+      message = 'QRTRAC server is temporarily unavailable. Please try again later.';
       isRetryable = true;
     } else if (error instanceof TypeError || (error as Error)?.name === 'AbortError') {
       type = 'NETWORK_ERROR';
       message =
         (error as Error)?.name === 'AbortError'
           ? 'Request timed out. Please check your network connection.'
-          : 'Network connection failed. Please check your internet.';
+          : 'Network unavailable. Please check your internet connection.';
       isRetryable = true;
+    } else if (rawMessage) {
+      if (rawMessage === 'Better luck next time!') {
+        type = 'AUTHENTICATION_ERROR';
+        message = 'Unauthorized: Invalid or missing API credentials.';
+      } else {
+        message = rawMessage;
+      }
     } else if ((error as Error)?.message) {
       message = (error as Error).message;
     }
@@ -174,14 +191,15 @@ export class ApiClient {
       type,
       statusCode,
       message,
-      details: responseData || error,
+      details: responseData || null,
       retryAfterSeconds,
       isRetryable,
     };
   }
 
   /**
-   * Core request dispatcher with timeout and exponential backoff retry strategy
+   * Core request dispatcher supporting timeout, credentials injection,
+   * exponential backoff retries, envelope validation, and normalized responses.
    */
   public async request<T>(
     endpoint: string,
@@ -200,7 +218,7 @@ export class ApiClient {
     const url = `${baseUrl}${cleanEndpoint}`;
 
     const headers = this.buildHeaders(fetchOptions.headers, credentials, bypassAuth);
-    this.log(`→ ${fetchOptions.method || 'GET'} ${url}`);
+    this.log(`→ ${fetchOptions.method || 'GET'} ${cleanEndpoint}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -223,11 +241,15 @@ export class ApiClient {
         json = { raw: responseText };
       }
 
-      if (!response.ok) {
-        const normalized = this.normalizeError(null, response.status, json);
-        this.logError(`← ${response.status} ${url}`, normalized.message);
+      // Check for HTTP errors or QRTRAC envelope failures (e.g. success === false)
+      const hasEnvelopeError = json && typeof json === 'object' && (json as { success?: boolean }).success === false;
 
-        // Auto-retry if retryable and under maxRetries
+      if (!response.ok || hasEnvelopeError) {
+        const effectiveStatus = !response.ok ? response.status : 400;
+        const normalized = this.normalizeError(null, effectiveStatus, json);
+        this.logError(`← ${response.status} ${cleanEndpoint}: ${normalized.message}`);
+
+        // Retry with exponential backoff if retryable and under maxRetries
         if (normalized.isRetryable && retryCount < this.maxRetries) {
           const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 500;
           this.log(`Retrying in ${Math.round(delay)}ms (Attempt ${retryCount + 1}/${this.maxRetries})...`);
@@ -240,21 +262,22 @@ export class ApiClient {
 
         return {
           success: false,
-          data: json as T,
+          data: (json as { data?: T })?.data ?? (null as unknown as T),
           message: normalized.message,
           error: normalized,
         };
       }
 
-      this.log(`← ${response.status} OK ${url}`);
+      this.log(`← ${response.status} OK ${cleanEndpoint}`);
       return {
         success: true,
-        data: (json as { data?: T })?.data ?? (json as T),
+        data: (json as { data?: T })?.data !== undefined ? (json as { data: T }).data : (json as T),
+        message: (json as { message?: string })?.message,
       };
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       const normalized = this.normalizeError(err);
-      this.logError(`← Network/Timeout Exception on ${url}:`, normalized.message);
+      this.logError(`← Exception on ${cleanEndpoint}: ${normalized.message}`);
 
       if (normalized.isRetryable && retryCount < this.maxRetries) {
         const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 500;
