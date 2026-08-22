@@ -95,7 +95,7 @@ describe('QRTRAC API Client & Service Layer', () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qrtrac.com/api/qrs-api/v2/teams/team_test_123?page=1&limit=10&search=Alex&sortBy=createdAt&sortOrder=desc',
+        'https://api.qrtrac.com/api/qrs-api/v2/teams/?page=1&limit=10&search=Alex&sortBy=createdAt&sortOrder=desc',
         expect.objectContaining({
           method: 'GET',
           headers: expect.objectContaining({

@@ -18,7 +18,7 @@ import {
 } from '../types/qrtrac';
 
 export interface IQrService {
-  listCards(teamId: string, params?: QrListQueryParams): Promise<ApiResponse<PaginatedResult<BusinessCard>>>;
+  listCards(teamId?: string, params?: QrListQueryParams): Promise<ApiResponse<PaginatedResult<BusinessCard>>>;
   getCard(id: string): Promise<ApiResponse<BusinessCard>>;
   createCard(draft: CardEditorDraft): Promise<ApiResponse<BusinessCard>>;
   updateCard(id: string, draft: Partial<CardEditorDraft> | BusinessCard): Promise<ApiResponse<BusinessCard>>;
@@ -33,10 +33,10 @@ export class QrService implements IQrService {
 
   /**
    * List team cards/QRs with pagination, search, and sorting.
-   * Endpoint: GET /qrs-api/v2/teams/{teamId}
+   * Endpoint: GET /qrs-api/v2/teams/
    */
   async listCards(
-    teamId: string,
+    teamId?: string,
     params: QrListQueryParams = {}
   ): Promise<ApiResponse<PaginatedResult<BusinessCard>>> {
     const page = params.page || 1;
@@ -55,7 +55,7 @@ export class QrService implements IQrService {
       totalCount: number;
       page: number;
       limit: number;
-    }>(`/qrs-api/v2/teams/${encodeURIComponent(teamId)}${query}`, {
+    }>(`/qrs-api/v2/teams/${query}`, {
       method: 'GET',
     });
 
@@ -82,10 +82,8 @@ export class QrService implements IQrService {
     const totalCount = response.data.totalCount || rawQrs.length;
     const totalPages = Math.ceil(totalCount / limit);
 
-    // Filter to VCARDs and map to BusinessCard domain model
-    const businessCards = rawQrs
-      .filter((qr) => qr.qrType === 'VCARD' || !qr.qrType)
-      .map((qr) => CardMapper.toBusinessCard(qr));
+    // Map all QRs to BusinessCard domain model
+    const businessCards = rawQrs.map((qr) => CardMapper.toBusinessCard(qr));
 
     return {
       success: true,
@@ -216,7 +214,7 @@ export class QrService implements IQrService {
       `/qrs-api/availability/${encodeURIComponent(displayId)}`,
       {
         method: 'GET',
-        bypassAuth: true, // Availability is public
+        bypassAuth: true,
       }
     );
   }
