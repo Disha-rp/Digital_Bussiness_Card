@@ -14,3 +14,4 @@ export * from './Header';
 export * from './SocialLinkInput';
 export * from './TemplateCard';
 export * from './QRCodeView';
+export * from './BusinessCardItem';

@@ -13,10 +13,10 @@ export type RootStackParamList = {
   // Protected App Stack Flow
   MyCards: undefined;
   CreateCard: undefined;
-  TemplateSelection: { cardTitle?: string };
-  EditCard: { cardTitle?: string; templateId?: string };
-  Preview: { cardTitle?: string; templateId?: string };
-  Share: { cardTitle?: string; previewUrl?: string };
+  TemplateSelection: { cardTitle?: string; cardId?: string };
+  EditCard: { cardTitle?: string; templateId?: string; cardId?: string };
+  Preview: { cardTitle?: string; templateId?: string; cardId?: string };
+  Share: { cardTitle?: string; previewUrl?: string; cardId?: string };
 };
 
 export type RootNavigationProp = NativeStackNavigationProp<RootStackParamList>;
