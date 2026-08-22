@@ -10,6 +10,7 @@
 
 import { ApiError, ApiErrorType, ApiResponse } from '../models/api';
 import { QrTracCredentials } from '../types/qrtrac';
+import { getEnvCredentials } from '../constants';
 
 export interface RequestOptions extends Omit<RequestInit, 'credentials'> {
   timeoutMs?: number;
@@ -35,10 +36,12 @@ export class ApiClient {
     baseUrl?: string;
     timeoutMs?: number;
     maxRetries?: number;
+    initialCredentials?: QrTracCredentials | null;
   } = {}) {
     this.defaultBaseUrl = config.baseUrl || 'https://api.qrtrac.com/api';
     this.defaultTimeoutMs = config.timeoutMs !== undefined ? config.timeoutMs : 10000;
     this.maxRetries = config.maxRetries !== undefined ? config.maxRetries : 2;
+    this.activeCredentials = config.initialCredentials !== undefined ? config.initialCredentials : getEnvCredentials();
   }
 
   public setCredentials(credentials: QrTracCredentials | null): void {
