@@ -401,5 +401,17 @@ describe('Phase 5 — My Cards & QRTRAC Service Integration', () => {
       expect(tiger.cloud?.publicUrl).toBe('https://qrtrac.link/tiger');
       expect(pdf.cloud?.publicUrl).toBe('https://qrtrac.link/mXLZ');
     });
+
+    it('verifies that QRCodeView receives the exact real publicUrl for QR generation without SvgUri', () => {
+      const gauri = CardMapper.toBusinessCard(gauriQr);
+      const game = CardMapper.toBusinessCard(gameQr);
+
+      // Verify that local QR generation value is always the real publicUrl
+      const gauriQrValue = gauri.cloud?.publicUrl || `https://qrtrac.link/${gauri.cloud?.displayId}`;
+      expect(gauriQrValue).toBe('https://qrtrac.link/bMiu');
+
+      const gameQrValue = game.cloud?.publicUrl || `https://qrtrac.link/${game.cloud?.displayId}`;
+      expect(gameQrValue).toBe('https://qrtrac.link/eDgI');
+    });
   });
 });

@@ -114,7 +114,7 @@ export const ShareScreen: React.FC = () => {
   const fullName = [card.contact.firstName, card.contact.lastName].filter(Boolean).join(' ') || card.name;
   const publicUrl =
     card.cloud?.publicUrl ||
-    (card.cloud?.displayId ? `https://qr.qrtrac.com/${card.cloud.displayId}` : undefined) ||
+    (card.cloud?.displayId ? `https://qrtrac.link/${card.cloud.displayId}` : undefined) ||
     route.params?.previewUrl;
 
   return (

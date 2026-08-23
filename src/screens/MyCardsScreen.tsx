@@ -123,7 +123,7 @@ export const MyCardsScreen: React.FC = () => {
       const card = cards.find((c) => c.id === cardId);
       const publicUrl =
         card?.cloud?.publicUrl ||
-        (card?.cloud?.displayId ? `https://qr.qrtrac.com/${card.cloud.displayId}` : undefined);
+        (card?.cloud?.displayId ? `https://qrtrac.link/${card.cloud.displayId}` : undefined);
       navigation.navigate('Share', {
         cardId,
         cardTitle: card?.name,
