@@ -35,6 +35,7 @@ export interface CardContextValue {
   loadMoreCards: () => Promise<void>;
   searchCards: (query: string) => Promise<void>;
   setCards: (cards: BusinessCard[]) => void;
+  addCard: (card: BusinessCard) => void;
   selectCard: (id: string | null) => void;
   setEditorDraft: (draft: CardEditorDraft | null) => void;
   updateEditorDraft: (fields: Partial<CardEditorDraft>) => void;
@@ -167,6 +168,18 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCardsState(newCards);
   }, []);
 
+  const addCard = useCallback((newCard: BusinessCard) => {
+    setCardsState((prev) => {
+      const existing = prev.filter((c) => c.id !== newCard.id);
+      return [newCard, ...existing];
+    });
+    setSelectedCardId(newCard.id);
+    setPagination((prev) => ({
+      ...prev,
+      totalCount: prev.totalCount + 1,
+    }));
+  }, []);
+
   const selectCard = useCallback((id: string | null) => {
     setSelectedCardId(id);
   }, []);
@@ -226,6 +239,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loadMoreCards,
       searchCards,
       setCards,
+      addCard,
       selectCard,
       setEditorDraft,
       updateEditorDraft,
@@ -250,6 +264,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loadMoreCards,
       searchCards,
       setCards,
+      addCard,
       selectCard,
       setEditorDraft,
       updateEditorDraft,

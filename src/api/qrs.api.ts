@@ -37,7 +37,7 @@ export class QrsApi implements IQrsApi {
   }
 
   async getQrById(id: string): Promise<ApiResponse<QrTracQr>> {
-    return this.client.request<QrTracQr>(`/qrs-api/${encodeURIComponent(id)}`, {
+    return this.client.request<QrTracQr>(`/qrs-api/teams/${encodeURIComponent(id)}`, {
       method: 'GET',
     });
   }

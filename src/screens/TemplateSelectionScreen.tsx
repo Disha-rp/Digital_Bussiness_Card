@@ -1,24 +1,40 @@
 /**
  * Template Selection Screen
- * Visual theme selection for creating or updating a digital business card.
+ * Visual theme selection for creating or editing a digital business card.
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { RootNavigationProp, RouteProps } from '../types/navigation';
 import { CARD_TEMPLATE_LIST } from '../theme/templates';
+import { CardTemplateId } from '../models/template';
 import { colors, theme } from '../theme';
 
 export const TemplateSelectionScreen: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
   const route = useRoute<RouteProps<'TemplateSelection'>>();
-  const cardTitle = route.params?.cardTitle || 'My Card';
+  const cardTitle = route.params?.cardTitle || 'Digital Business Card';
   const cardId = route.params?.cardId;
+  const isCreateMode = route.params?.mode === 'create' || !cardId;
 
-  const [selectedTemplate, setSelectedTemplate] = useState('modern_minimal');
+  const [selectedTemplate, setSelectedTemplate] = useState<CardTemplateId>('modern_minimal');
+
+  const handleContinue = () => {
+    if (isCreateMode) {
+      navigation.navigate('CreateCard', {
+        templateId: selectedTemplate,
+      });
+    } else {
+      navigation.navigate('EditCard', {
+        cardId,
+        cardTitle,
+        templateId: selectedTemplate,
+      });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -30,9 +46,13 @@ export const TemplateSelectionScreen: React.FC = () => {
         <View style={{ width: 36 }} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.sectionHeader}>Select Visual Style</Text>
-        <Text style={styles.sectionSub}>Choose theme for {cardTitle}</Text>
+        <Text style={styles.sectionSub}>
+          {isCreateMode
+            ? 'Step 1 of 2: Choose a presentation theme for your new card'
+            : `Update theme for ${cardTitle}`}
+        </Text>
 
         <View style={styles.templateList}>
           {CARD_TEMPLATE_LIST.map((tmpl) => {
@@ -47,15 +67,31 @@ export const TemplateSelectionScreen: React.FC = () => {
                 ]}
                 activeOpacity={0.8}
                 onPress={() => setSelectedTemplate(tmpl.id)}
+                testID={`template-card-${tmpl.id}`}
               >
+                <View
+                  style={[
+                    styles.colorAccentBar,
+                    { backgroundColor: tmpl.style.accentColor },
+                  ]}
+                />
                 <View style={styles.templateInfo}>
                   <Text style={[styles.templateName, isSelected && { color: tmpl.style.accentColor }]}>
                     {tmpl.name}
                   </Text>
                   <Text style={styles.templateDesc}>{tmpl.description}</Text>
+                  <View style={styles.tagRow}>
+                    {tmpl.tags.map((tag) => (
+                      <View key={tag} style={styles.tagBadge}>
+                        <Text style={styles.tagText}>#{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={22} color={tmpl.style.accentColor} />
+                {isSelected ? (
+                  <Ionicons name="checkmark-circle" size={24} color={tmpl.style.accentColor} />
+                ) : (
+                  <View style={styles.unselectedRadio} />
                 )}
               </TouchableOpacity>
             );
@@ -65,19 +101,15 @@ export const TemplateSelectionScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.primaryButton}
           activeOpacity={0.8}
-          onPress={() =>
-            navigation.navigate('EditCard', {
-              cardId,
-              cardTitle,
-              templateId: selectedTemplate,
-            })
-          }
-          testID="continue-edit-btn"
+          onPress={handleContinue}
+          testID="continue-to-form-btn"
         >
-          <Text style={styles.buttonText}>Continue to Card Details</Text>
+          <Text style={styles.buttonText}>
+            {isCreateMode ? 'Continue to Card Details' : 'Apply to Card'}
+          </Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 6 }} />
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -107,48 +139,77 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   content: {
-    flex: 1,
     padding: theme.spacing.lg,
-    justifyContent: 'center',
+    paddingBottom: theme.spacing.xxl,
   },
   sectionHeader: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.textPrimary,
   },
   sectionSub: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     marginTop: theme.spacing.xs,
     marginBottom: theme.spacing.lg,
   },
   templateList: {
-    gap: theme.spacing.sm,
+    gap: theme.spacing.md,
     marginBottom: theme.spacing.xl,
   },
   templateCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1.5,
     padding: theme.spacing.md,
+    overflow: 'hidden',
   },
   templateCardActive: {
     backgroundColor: colors.surfaceElevated,
+  },
+  colorAccentBar: {
+    width: 5,
+    height: '100%',
+    borderRadius: 3,
+    marginRight: theme.spacing.md,
   },
   templateInfo: {
     flex: 1,
   },
   templateName: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: colors.textPrimary,
+    marginBottom: 4,
   },
   templateDesc: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  tagBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  tagText: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  unselectedRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   primaryButton: {
     flexDirection: 'row',
@@ -160,7 +221,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

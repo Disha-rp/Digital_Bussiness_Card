@@ -108,7 +108,7 @@ export class QrService implements IQrService {
    */
   async getCard(id: string): Promise<ApiResponse<BusinessCard>> {
     const response = await this.client.request<QrTracQr>(
-      `/qrs-api/${encodeURIComponent(id)}`,
+      `/qrs-api/teams/${encodeURIComponent(id)}`,
       { method: 'GET' }
     );
 

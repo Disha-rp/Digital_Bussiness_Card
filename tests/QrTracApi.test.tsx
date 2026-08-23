@@ -132,7 +132,7 @@ describe('QRTRAC API Client & Service Layer', () => {
       const result = await service.getCard('qr_abc123');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qrtrac.com/api/qrs-api/qr_abc123',
+        'https://api.qrtrac.com/api/qrs-api/teams/qr_abc123',
         expect.objectContaining({ method: 'GET' })
       );
 

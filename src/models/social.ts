@@ -7,6 +7,7 @@ export type SocialPlatform =
   | 'twitter'
   | 'github'
   | 'instagram'
+  | 'facebook'
   | 'youtube'
   | 'website'
   | 'whatsapp'
@@ -35,7 +36,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
     name: 'LinkedIn',
     iconName: 'logo-linkedin',
     prefixUrl: 'https://linkedin.com/in/',
-    placeholder: 'username or profile URL',
+    placeholder: 'https://linkedin.com/in/username',
     color: '#0A66C2',
   },
   {
@@ -43,7 +44,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
     name: 'Twitter / X',
     iconName: 'logo-twitter',
     prefixUrl: 'https://twitter.com/',
-    placeholder: 'handle (without @)',
+    placeholder: 'https://x.com/username',
     color: '#1DA1F2',
   },
   {
@@ -51,7 +52,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
     name: 'GitHub',
     iconName: 'logo-github',
     prefixUrl: 'https://github.com/',
-    placeholder: 'username',
+    placeholder: 'https://github.com/username',
     color: '#333333',
   },
   {
@@ -59,15 +60,23 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
     name: 'Instagram',
     iconName: 'logo-instagram',
     prefixUrl: 'https://instagram.com/',
-    placeholder: 'username',
+    placeholder: 'https://instagram.com/username',
     color: '#E4405F',
+  },
+  {
+    platform: 'facebook',
+    name: 'Facebook',
+    iconName: 'logo-facebook',
+    prefixUrl: 'https://facebook.com/',
+    placeholder: 'https://facebook.com/username',
+    color: '#1877F2',
   },
   {
     platform: 'youtube',
     name: 'YouTube',
     iconName: 'logo-youtube',
     prefixUrl: 'https://youtube.com/@',
-    placeholder: 'channel or handle',
+    placeholder: 'https://youtube.com/@channel',
     color: '#FF0000',
   },
   {
@@ -75,7 +84,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
     name: 'WhatsApp',
     iconName: 'logo-whatsapp',
     prefixUrl: 'https://wa.me/',
-    placeholder: 'phone number with country code',
+    placeholder: 'https://wa.me/phonenumber',
     color: '#25D366',
   },
   {

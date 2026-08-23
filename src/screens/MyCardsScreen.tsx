@@ -135,7 +135,7 @@ export const MyCardsScreen: React.FC = () => {
 
   const handleCreateNewCard = useCallback(() => {
     selectCard(null);
-    navigation.navigate('CreateCard');
+    navigation.navigate('TemplateSelection', { mode: 'create' });
   }, [selectCard, navigation]);
 
   const handleLogoutPress = () => {
