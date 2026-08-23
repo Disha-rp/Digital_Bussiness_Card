@@ -94,6 +94,7 @@ export interface QrTracQr extends QrTracVCardPayloadFields {
   qrType: QrType;
   teamId: string;
   orgId?: string;
+  baseUrl?: string;
   qrRedirectUrl?: string;
   qrImageUrl?: string;
   qrImageHash?: string;

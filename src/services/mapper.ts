@@ -90,7 +90,9 @@ export const CardMapper = {
         teamId: qr.teamId,
         qrImageUrl: qr.qrImageUrl,
         qrImageHash: qr.qrImageHash,
-        publicUrl: qr.qrRedirectUrl || (qr.displayId ? `https://qr.qrtrac.com/${qr.displayId}` : undefined),
+        publicUrl:
+          qr.qrRedirectUrl ||
+          (qr.displayId ? `${(qr.baseUrl || 'https://qrtrac.link').replace(/\/+$/, '')}/${qr.displayId}` : undefined),
         templateId: (qr as any).templateId || undefined,
         batchId: qr.batchId,
         isSynced: true,

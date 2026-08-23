@@ -222,23 +222,13 @@ export const PreviewScreen: React.FC = () => {
 
           {/* QR Code Presentation Box */}
           <View style={styles.qrSection}>
-            {card.cloud?.qrImageUrl ? (
-              <View style={styles.hostedQrContainer}>
-                <Image
-                  source={{ uri: card.cloud.qrImageUrl }}
-                  style={styles.hostedQrImage}
-                  resizeMode="contain"
-                />
-                <Text style={styles.qrCaption}>Hosted QRTRAC Asset</Text>
-              </View>
-            ) : (
-              <QRCodeView
-                value={publicUrl || `https://qrtrac.me/${card.id}`}
-                size={140}
-                backgroundColor="#FFFFFF"
-                color="#000000"
-              />
-            )}
+            <QRCodeView
+              imageUrl={card.cloud?.qrImageUrl}
+              value={publicUrl || (card.cloud?.displayId ? `https://qrtrac.link/${card.cloud.displayId}` : `https://qrtrac.me/${card.id}`)}
+              size={140}
+              backgroundColor="#FFFFFF"
+              color="#000000"
+            />
           </View>
 
           {/* Meta Badges */}

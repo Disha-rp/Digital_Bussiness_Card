@@ -142,22 +142,13 @@ export const ShareScreen: React.FC = () => {
 
           {/* QR Code Presentation */}
           <View style={styles.qrContainer}>
-            {card.cloud?.qrImageUrl ? (
-              <View style={styles.hostedQrBox}>
-                <Image
-                  source={{ uri: card.cloud.qrImageUrl }}
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
-              </View>
-            ) : (
-              <QRCodeView
-                value={publicUrl || `https://qrtrac.me/${card.id}`}
-                size={130}
-                backgroundColor="#FFFFFF"
-                color="#000000"
-              />
-            )}
+            <QRCodeView
+              imageUrl={card.cloud?.qrImageUrl}
+              value={publicUrl || (card.cloud?.displayId ? `https://qrtrac.link/${card.cloud.displayId}` : `https://qrtrac.me/${card.id}`)}
+              size={130}
+              backgroundColor="#FFFFFF"
+              color="#000000"
+            />
           </View>
 
           {publicUrl ? (

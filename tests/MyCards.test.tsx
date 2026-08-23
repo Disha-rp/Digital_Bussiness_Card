@@ -15,6 +15,7 @@
  * 12. Share navigation & data display
  * 13. Dynamic team cards resolution (Game, Tiger img, PDF DEMO, Untitled)
  * 14. Missing/invalid cardId error handling (NO Alex Morgan fallback)
+ * 15. Verified publicUrl construction using qr.baseUrl & displayId (Gauri, Game, Tiger, PDF, Untitled)
  */
 
 (global as any).__DEV__ = true;
@@ -29,18 +30,19 @@ const mockQrService = qrService as jest.Mocked<typeof qrService>;
 
 describe('Phase 5 — My Cards & QRTRAC Service Integration', () => {
   const gauriQr: QrTracQr = {
-    id: 'qr_gauri_101',
+    id: 'bMiu',
     name: 'Gauri Khiste',
     qrType: 'VCARD',
     teamId: 'team_live_44S2',
+    baseUrl: 'https://qrtrac.link/',
     firstName: 'Gauri',
     lastName: 'Khiste',
-    company: 'Tech Innovations',
-    designation: 'Senior Lead Engineer',
-    email: 'gauri.khiste@tech.io',
+    company: 'Qrtrac',
+    designation: 'Software developer',
+    email: 'gauri.khiste@qrtrac.com',
     mobile: '+91-9876543210',
-    displayId: 'gauri-khiste',
-    qrImageUrl: 'https://storage.qrtrac.com/qrs/qr_gauri_101.png',
+    displayId: 'bMiu',
+    qrImageUrl: 'https://storage.googleapis.com/qrtrac-prod.appspot.com/qrs/bMiu.svg',
     createdAt: 1700000000000,
     updatedAt: 1700000000000,
     metadata: {
@@ -49,53 +51,54 @@ describe('Phase 5 — My Cards & QRTRAC Service Integration', () => {
   };
 
   const gameQr: QrTracQr = {
-    id: 'qr_game_102',
+    id: 'eDgI',
     name: 'Game',
-    qrType: 'VCARD',
+    qrType: 'APP_DOWNLOAD',
     teamId: 'team_live_44S2',
+    baseUrl: 'https://qrtrac.link/',
     firstName: 'Game',
     company: 'Arcade Studios',
     designation: 'Lead Game Designer',
     email: 'contact@arcadestudios.com',
-    displayId: 'game-card',
-    qrImageUrl: 'https://storage.qrtrac.com/qrs/qr_game_102.png',
+    displayId: 'eDgI',
     createdAt: 1700001000000,
     updatedAt: 1700001000000,
   };
 
   const tigerQr: QrTracQr = {
-    id: 'qr_tiger_103',
+    id: 'fPlwVDSQDZm9XdL9gDgz',
     name: 'Tiger img',
-    qrType: 'VCARD',
+    qrType: 'IMAGE_GALLERY',
     teamId: 'team_live_44S2',
+    baseUrl: 'https://qrtrac.link/',
     firstName: 'Tiger img',
     company: 'WildLife Initiative',
-    displayId: 'tiger-img',
-    qrImageUrl: 'https://storage.qrtrac.com/qrs/qr_tiger_103.png',
+    displayId: 'tiger',
     createdAt: 1700002000000,
     updatedAt: 1700002000000,
   };
 
   const pdfQr: QrTracQr = {
-    id: 'qr_pdf_104',
+    id: 'mXLZ',
     name: 'PDF DEMO',
-    qrType: 'VCARD',
+    qrType: 'PDF',
     teamId: 'team_live_44S2',
+    baseUrl: 'https://qrtrac.link/',
     firstName: 'PDF DEMO',
     company: 'DocuSync Corp',
-    displayId: 'pdf-demo',
-    qrImageUrl: 'https://storage.qrtrac.com/qrs/qr_pdf_104.png',
+    displayId: 'mXLZ',
     createdAt: 1700003000000,
     updatedAt: 1700003000000,
   };
 
   const untitledQr: QrTracQr = {
-    id: 'qr_untitled_105',
+    id: 'IY41',
     name: 'Untitled',
     qrType: 'VCARD',
     teamId: 'team_live_44S2',
+    baseUrl: 'https://qrtrac.link/',
     firstName: 'Untitled',
-    displayId: 'untitled-card',
+    displayId: 'IY41',
     createdAt: 1700004000000,
     updatedAt: 1700004000000,
   };
@@ -154,12 +157,13 @@ describe('Phase 5 — My Cards & QRTRAC Service Integration', () => {
       expect(result.success).toBe(true);
       expect(result.data.items).toHaveLength(1);
       const first = result.data.items[0];
-      expect(first.id).toBe('qr_gauri_101');
+      expect(first.id).toBe('bMiu');
       expect(first.name).toBe('Gauri Khiste');
-      expect(first.contact.title).toBe('Senior Lead Engineer');
-      expect(first.contact.company).toBe('Tech Innovations');
-      expect(first.cloud?.qrImageUrl).toBe('https://storage.qrtrac.com/qrs/qr_gauri_101.png');
-      expect(first.cloud?.displayId).toBe('gauri-khiste');
+      expect(first.contact.title).toBe('Software developer');
+      expect(first.contact.company).toBe('Qrtrac');
+      expect(first.cloud?.qrImageUrl).toBe('https://storage.googleapis.com/qrtrac-prod.appspot.com/qrs/bMiu.svg');
+      expect(first.cloud?.displayId).toBe('bMiu');
+      expect(first.cloud?.publicUrl).toBe('https://qrtrac.link/bMiu');
     });
   });
 
@@ -346,56 +350,56 @@ describe('Phase 5 — My Cards & QRTRAC Service Integration', () => {
         data: gauriCard,
       });
 
-      const result = await qrService.getCard('qr_gauri_101');
+      const result = await qrService.getCard('bMiu');
       expect(result.success).toBe(true);
-      expect(result.data?.id).toBe('qr_gauri_101');
+      expect(result.data?.id).toBe('bMiu');
       expect(result.data?.name).toBe('Gauri Khiste');
-      expect(result.data?.contact.title).toBe('Senior Lead Engineer');
+      expect(result.data?.contact.title).toBe('Software developer');
     });
   });
 
-  describe('10-14. Card Action Resolution & Navigation Contract', () => {
+  describe('10-15. Card Action Resolution & Public URL Mapping', () => {
     it('resolves Gauri Khiste card data correctly for Preview, Edit, Share, and QR flows', () => {
       const card = CardMapper.toBusinessCard(gauriQr);
 
       // Verify that card has exact fields required by Preview
-      expect(card.id).toBe('qr_gauri_101');
+      expect(card.id).toBe('bMiu');
       expect(card.name).toBe('Gauri Khiste');
-      expect(card.contact.title).toBe('Senior Lead Engineer');
-      expect(card.contact.company).toBe('Tech Innovations');
-      expect(card.contact.email).toBe('gauri.khiste@tech.io');
+      expect(card.contact.title).toBe('Software developer');
+      expect(card.contact.company).toBe('Qrtrac');
+      expect(card.contact.email).toBe('gauri.khiste@qrtrac.com');
       expect(card.contact.phoneMobile).toBe('+91-9876543210');
 
-      // Verify that QR assets are populated
-      expect(card.cloud?.qrImageUrl).toBe('https://storage.qrtrac.com/qrs/qr_gauri_101.png');
-      expect(card.cloud?.displayId).toBe('gauri-khiste');
+      // Verify that QR assets and public URLs are correctly mapped
+      expect(card.cloud?.qrImageUrl).toBe('https://storage.googleapis.com/qrtrac-prod.appspot.com/qrs/bMiu.svg');
+      expect(card.cloud?.displayId).toBe('bMiu');
+      expect(card.cloud?.publicUrl).toBe('https://qrtrac.link/bMiu');
 
       // Verify that navigation params can carry cardId
       const navParams = {
         cardId: card.id,
         cardTitle: card.name,
         templateId: card.template,
-        previewUrl: `https://qr.qrtrac.com/${card.cloud?.displayId}`,
+        previewUrl: card.cloud?.publicUrl,
       };
 
-      expect(navParams.cardId).toBe('qr_gauri_101');
+      expect(navParams.cardId).toBe('bMiu');
       expect(navParams.cardTitle).toBe('Gauri Khiste');
+      expect(navParams.previewUrl).toBe('https://qrtrac.link/bMiu');
     });
 
-    it('resolves each distinct team card correctly without falling back to demo data', () => {
-      const cards = [gameQr, tigerQr, pdfQr, untitledQr].map((qr) => CardMapper.toBusinessCard(qr));
+    it('correctly maps publicUrl for all team cards using qr.baseUrl and displayId', () => {
+      const gauri = CardMapper.toBusinessCard(gauriQr);
+      const untitled = CardMapper.toBusinessCard(untitledQr);
+      const game = CardMapper.toBusinessCard(gameQr);
+      const tiger = CardMapper.toBusinessCard(tigerQr);
+      const pdf = CardMapper.toBusinessCard(pdfQr);
 
-      expect(cards[0].name).toBe('Game');
-      expect(cards[0].id).toBe('qr_game_102');
-
-      expect(cards[1].name).toBe('Tiger img');
-      expect(cards[1].id).toBe('qr_tiger_103');
-
-      expect(cards[2].name).toBe('PDF DEMO');
-      expect(cards[2].id).toBe('qr_pdf_104');
-
-      expect(cards[3].name).toBe('Untitled');
-      expect(cards[3].id).toBe('qr_untitled_105');
+      expect(gauri.cloud?.publicUrl).toBe('https://qrtrac.link/bMiu');
+      expect(untitled.cloud?.publicUrl).toBe('https://qrtrac.link/IY41');
+      expect(game.cloud?.publicUrl).toBe('https://qrtrac.link/eDgI');
+      expect(tiger.cloud?.publicUrl).toBe('https://qrtrac.link/tiger');
+      expect(pdf.cloud?.publicUrl).toBe('https://qrtrac.link/mXLZ');
     });
   });
 });

@@ -4,13 +4,14 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BusinessCard } from '../models/card';
 import { CARD_TEMPLATES } from '../theme/templates';
 import { colors, theme } from '../theme';
 import { Card } from './Card';
 import { Avatar } from './Avatar';
+import { QRCodeView } from './QRCodeView';
 
 export interface BusinessCardItemProps {
   card: BusinessCard;
@@ -36,6 +37,10 @@ export const BusinessCardItem: React.FC<BusinessCardItemProps> = ({
         year: 'numeric',
       })
     : 'Recently';
+
+  const publicUrl =
+    card.cloud?.publicUrl ||
+    (card.cloud?.displayId ? `https://qrtrac.link/${card.cloud.displayId}` : undefined);
 
   return (
     <Card style={styles.container} variant="elevated" onPress={() => onOpen(card.id)}>
@@ -68,18 +73,15 @@ export const BusinessCardItem: React.FC<BusinessCardItemProps> = ({
         </View>
 
         {/* QR Preview Thumbnail */}
-        <View style={styles.qrThumbnailContainer}>
-          {card.cloud?.qrImageUrl ? (
-            <Image
-              source={{ uri: card.cloud.qrImageUrl }}
-              style={styles.qrThumbnail}
-              resizeMode="contain"
-            />
-          ) : (
-            <View style={styles.qrPlaceholder}>
-              <Ionicons name="qr-code" size={24} color={colors.primaryLight} />
-            </View>
-          )}
+        <View style={styles.qrThumbnailWrapper}>
+          <QRCodeView
+            imageUrl={card.cloud?.qrImageUrl}
+            value={publicUrl || `https://qrtrac.me/${card.id}`}
+            size={36}
+            backgroundColor="#FFFFFF"
+            color="#000000"
+            style={styles.qrThumbnailCustom}
+          />
         </View>
       </View>
 
@@ -184,23 +186,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
-  qrThumbnailContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+  qrThumbnailWrapper: {
     marginLeft: theme.spacing.sm,
   },
-  qrThumbnail: {
-    width: 44,
-    height: 44,
-  },
-  qrPlaceholder: {
+  qrThumbnailCustom: {
     alignItems: 'center',
     justifyContent: 'center',
   },
