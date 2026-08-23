@@ -1,5 +1,6 @@
 /**
- * Template Selection Screen (Phase 1 Placeholder)
+ * Template Selection Screen
+ * Visual theme selection for creating or updating a digital business card.
  */
 
 import React, { useState } from 'react';
@@ -8,25 +9,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { RootNavigationProp, RouteProps } from '../types/navigation';
+import { CARD_TEMPLATE_LIST } from '../theme/templates';
 import { colors, theme } from '../theme';
 
 export const TemplateSelectionScreen: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
   const route = useRoute<RouteProps<'TemplateSelection'>>();
   const cardTitle = route.params?.cardTitle || 'My Card';
+  const cardId = route.params?.cardId;
 
   const [selectedTemplate, setSelectedTemplate] = useState('modern_minimal');
-
-  const templates = [
-    { id: 'modern_minimal', name: 'Modern Minimalist', desc: 'Sleek dark theme with vibrant accents' },
-    { id: 'corporate_executive', name: 'Corporate Executive', desc: 'Deep navy with gold metallic accents' },
-    { id: 'vibrant_glass', name: 'Vibrant Glassmorphism', desc: 'Frosted glass with sunset mesh gradient' },
-  ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} testID="template-back-btn">
           <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Choose Template</Text>
@@ -35,26 +32,30 @@ export const TemplateSelectionScreen: React.FC = () => {
 
       <View style={styles.content}>
         <Text style={styles.sectionHeader}>Select Visual Style</Text>
-        <Text style={styles.sectionSub}>Navigation Flow Step 4: Choose Template → Edit Card</Text>
+        <Text style={styles.sectionSub}>Choose theme for {cardTitle}</Text>
 
         <View style={styles.templateList}>
-          {templates.map((tmpl) => {
+          {CARD_TEMPLATE_LIST.map((tmpl) => {
             const isSelected = selectedTemplate === tmpl.id;
             return (
               <TouchableOpacity
                 key={tmpl.id}
-                style={[styles.templateCard, isSelected && styles.templateCardActive]}
+                style={[
+                  styles.templateCard,
+                  isSelected && styles.templateCardActive,
+                  { borderColor: isSelected ? tmpl.style.accentColor : colors.border },
+                ]}
                 activeOpacity={0.8}
                 onPress={() => setSelectedTemplate(tmpl.id)}
               >
                 <View style={styles.templateInfo}>
-                  <Text style={[styles.templateName, isSelected && { color: colors.primaryLight }]}>
+                  <Text style={[styles.templateName, isSelected && { color: tmpl.style.accentColor }]}>
                     {tmpl.name}
                   </Text>
-                  <Text style={styles.templateDesc}>{tmpl.desc}</Text>
+                  <Text style={styles.templateDesc}>{tmpl.description}</Text>
                 </View>
                 {isSelected && (
-                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                  <Ionicons name="checkmark-circle" size={22} color={tmpl.style.accentColor} />
                 )}
               </TouchableOpacity>
             );
@@ -66,12 +67,14 @@ export const TemplateSelectionScreen: React.FC = () => {
           activeOpacity={0.8}
           onPress={() =>
             navigation.navigate('EditCard', {
+              cardId,
               cardTitle,
               templateId: selectedTemplate,
             })
           }
+          testID="continue-edit-btn"
         >
-          <Text style={styles.buttonText}>Edit Card Details</Text>
+          <Text style={styles.buttonText}>Continue to Card Details</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 6 }} />
         </TouchableOpacity>
       </View>
@@ -110,7 +113,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   sectionSub: {
@@ -129,11 +132,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1.5,
-    borderColor: colors.border,
     padding: theme.spacing.md,
   },
   templateCardActive: {
-    borderColor: colors.primary,
     backgroundColor: colors.surfaceElevated,
   },
   templateInfo: {

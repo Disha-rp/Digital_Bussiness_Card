@@ -41,7 +41,7 @@ export interface CardAnalyticsSummary {
 export interface BusinessCard {
   // Application / UI Identity
   id: string; // Unique local/app UUID
-  name: string; // Card display title (e.g. "Alex Morgan • Tech Lead")
+  name: string; // Card display title (e.g. "Jane Doe • Senior Engineer")
   profilePhoto?: string; // Local URI or hosted image URL
 
   // Contact Information

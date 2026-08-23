@@ -81,33 +81,56 @@ export const MyCardsScreen: React.FC = () => {
   const handleOpenCard = useCallback(
     (cardId: string) => {
       selectCard(cardId);
-      navigation.navigate('Preview', { cardId });
+      const card = cards.find((c) => c.id === cardId);
+      navigation.navigate('Preview', {
+        cardId,
+        cardTitle: card?.name,
+        templateId: card?.template,
+      });
     },
-    [selectCard, navigation]
+    [selectCard, cards, navigation]
   );
 
   const handlePreviewCard = useCallback(
     (cardId: string) => {
       selectCard(cardId);
-      navigation.navigate('Preview', { cardId });
+      const card = cards.find((c) => c.id === cardId);
+      navigation.navigate('Preview', {
+        cardId,
+        cardTitle: card?.name,
+        templateId: card?.template,
+      });
     },
-    [selectCard, navigation]
+    [selectCard, cards, navigation]
   );
 
   const handleEditCard = useCallback(
     (cardId: string) => {
       selectCard(cardId);
-      navigation.navigate('EditCard', { cardId });
+      const card = cards.find((c) => c.id === cardId);
+      navigation.navigate('EditCard', {
+        cardId,
+        cardTitle: card?.name,
+        templateId: card?.template,
+      });
     },
-    [selectCard, navigation]
+    [selectCard, cards, navigation]
   );
 
   const handleShareCard = useCallback(
     (cardId: string) => {
       selectCard(cardId);
-      navigation.navigate('Share', { cardId });
+      const card = cards.find((c) => c.id === cardId);
+      const publicUrl =
+        card?.cloud?.publicUrl ||
+        (card?.cloud?.displayId ? `https://qr.qrtrac.com/${card.cloud.displayId}` : undefined);
+      navigation.navigate('Share', {
+        cardId,
+        cardTitle: card?.name,
+        previewUrl: publicUrl,
+      });
     },
-    [selectCard, navigation]
+    [selectCard, cards, navigation]
   );
 
   const handleCreateNewCard = useCallback(() => {
