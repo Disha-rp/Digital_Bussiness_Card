@@ -1,6 +1,7 @@
 /**
  * Profile Image Picker Service
  * Wraps expo-image-picker for photo library and camera access with safe permission checks.
+ * Produces cross-platform data URIs when base64 is available for universal Android & Web compatibility.
  */
 
 import * as ImagePicker from 'expo-image-picker';
@@ -33,16 +34,22 @@ export const ImageService = {
         mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
 
       if (result.canceled || !result.assets || result.assets.length === 0) {
         return { success: false, cancelled: true };
       }
 
+      const asset = result.assets[0];
+      const resolvedUri = asset.base64
+        ? `data:image/jpeg;base64,${asset.base64}`
+        : asset.uri;
+
       return {
         success: true,
-        uri: result.assets[0].uri,
+        uri: resolvedUri,
       };
     } catch (err: any) {
       return {
@@ -70,16 +77,22 @@ export const ImageService = {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
 
       if (result.canceled || !result.assets || result.assets.length === 0) {
         return { success: false, cancelled: true };
       }
 
+      const asset = result.assets[0];
+      const resolvedUri = asset.base64
+        ? `data:image/jpeg;base64,${asset.base64}`
+        : asset.uri;
+
       return {
         success: true,
-        uri: result.assets[0].uri,
+        uri: resolvedUri,
       };
     } catch (err: any) {
       return {

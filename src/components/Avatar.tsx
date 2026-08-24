@@ -1,9 +1,11 @@
 /**
- * Reusable Avatar Component Shell
+ * Reusable Avatar Component
+ * Renders profile image with graceful initials or icon fallback.
+ * Safely handles cross-platform URI compatibility (remote HTTPS, data URIs, local files).
  */
 
-import React from 'react';
-import { View, Image, Text, StyleSheet, ViewStyle } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Image, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
@@ -32,10 +34,22 @@ export const Avatar: React.FC<AvatarProps> = ({
   style,
 }) => {
   const { dimension, fontSize, iconSize } = SIZE_MAP[size];
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [uri]);
+
+  const cleanUri = uri?.trim() || null;
+
+  // On Web, local native file:/// URIs cannot be resolved by the browser security sandbox
+  const isInvalidWebFileUri = Platform.OS === 'web' && Boolean(cleanUri?.startsWith('file://'));
+  const shouldRenderImage = Boolean(cleanUri && !imageError && !isInvalidWebFileUri);
 
   const initials = name
     ? name
         .split(' ')
+        .filter(Boolean)
         .map((n) => n[0])
         .slice(0, 2)
         .join('')
@@ -55,11 +69,12 @@ export const Avatar: React.FC<AvatarProps> = ({
         style,
       ]}
     >
-      {uri ? (
+      {shouldRenderImage ? (
         <Image
-          source={{ uri }}
+          source={{ uri: cleanUri! }}
           style={{ width: dimension, height: dimension, borderRadius: dimension / 2 }}
           resizeMode="cover"
+          onError={() => setImageError(true)}
         />
       ) : initials ? (
         <Text style={[styles.initials, { fontSize }]}>{initials}</Text>

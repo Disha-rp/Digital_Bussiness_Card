@@ -58,7 +58,13 @@ export const CardMapper = {
     return {
       id: qr.id,
       name: displayName,
-      profilePhoto: meta.profileImage || meta.profileImageUrl || undefined,
+      profilePhoto:
+        meta.profileImage ||
+        meta.profileImageUrl ||
+        (qr as any).profilePhotoUrl ||
+        (qr as any).imgUrls?.[0]?.url ||
+        meta.image ||
+        undefined,
       contact: {
         firstName: qr.firstName || undefined,
         lastName: qr.lastName || undefined,

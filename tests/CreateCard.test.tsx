@@ -205,6 +205,24 @@ describe('Phase 6 — Create Digital Business Card Workflow', () => {
       expect(res.error).toBe('Permission denied');
     });
 
+    it('generates cross-platform data URI when base64 is available', async () => {
+      mockImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValueOnce({
+        granted: true,
+        status: ImagePicker.PermissionStatus.GRANTED,
+        expires: 'never',
+        canAskAgain: true,
+      });
+
+      mockImagePicker.launchImageLibraryAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///local/photo.jpg', base64: 'BASE64_DATA_STRING', width: 500, height: 500 }],
+      });
+
+      const res = await ImageService.pickFromLibrary();
+      expect(res.success).toBe(true);
+      expect(res.uri).toBe('data:image/jpeg;base64,BASE64_DATA_STRING');
+    });
+
     it('handles camera permission and capture successfully', async () => {
       mockImagePicker.requestCameraPermissionsAsync.mockResolvedValueOnce({
         granted: true,
@@ -224,7 +242,27 @@ describe('Phase 6 — Create Digital Business Card Workflow', () => {
     });
   });
 
-  describe('5. QRTRAC VCARD Request Payload Construction', () => {
+  describe('5. Profile Photo Field Mapping in CardMapper', () => {
+    it('maps profilePhoto from metadata.profileImage, metadata.profileImageUrl, and profilePhotoUrl', () => {
+      const cardFromMeta = CardMapper.toBusinessCard({
+        id: '1',
+        name: 'Disha Patil',
+        qrType: 'VCARD',
+        metadata: { profileImage: 'https://example.com/avatar.jpg' },
+      } as any);
+      expect(cardFromMeta.profilePhoto).toBe('https://example.com/avatar.jpg');
+
+      const cardFromTopLevel = CardMapper.toBusinessCard({
+        id: '2',
+        name: 'Tiger',
+        qrType: 'VCARD',
+        profilePhotoUrl: 'https://storage.googleapis.com/qrtrac/tiger.png',
+      } as any);
+      expect(cardFromTopLevel.profilePhoto).toBe('https://storage.googleapis.com/qrtrac/tiger.png');
+    });
+  });
+
+  describe('6. QRTRAC VCARD Request Payload Construction', () => {
     it('maps CardEditorDraft into exact verified QRTRAC CreateQrRequest', () => {
       const payload = CardMapper.toCreateQrRequest(sampleDraft);
 
