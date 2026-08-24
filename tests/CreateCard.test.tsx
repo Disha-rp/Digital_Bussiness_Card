@@ -118,9 +118,9 @@ describe('Phase 6 — Create Digital Business Card Workflow', () => {
     it('provides exactly three distinctive visual card presentation themes', () => {
       expect(CARD_TEMPLATE_LIST).toHaveLength(3);
       const templateIds = CARD_TEMPLATE_LIST.map((t) => t.id);
-      expect(templateIds).toContain('modern_minimal');
-      expect(templateIds).toContain('corporate_executive');
-      expect(templateIds).toContain('vibrant_glass');
+      expect(templateIds).toContain('professional');
+      expect(templateIds).toContain('modern');
+      expect(templateIds).toContain('minimal');
     });
   });
 

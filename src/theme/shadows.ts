@@ -1,8 +1,9 @@
 /**
- * Design System Shadows & Elevation Tokens
+ * Design System Shadows & Elevation Tokens — Light Theme
+ * Soft, natural, clean elevation values for light surfaces.
  */
 
-import { Platform, ViewStyle } from 'react-native';
+import { ViewStyle } from 'react-native';
 import { colors } from './colors';
 
 export const shadows = {
@@ -15,42 +16,42 @@ export const shadows = {
   } as ViewStyle,
 
   sm: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   } as ViewStyle,
 
   md: {
-    shadowColor: '#000000',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.07,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   } as ViewStyle,
 
   lg: {
-    shadowColor: '#000000',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.10,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 6,
   } as ViewStyle,
 
   glowPrimary: {
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.20,
+    shadowRadius: 10,
+    elevation: 4,
   } as ViewStyle,
 
   glowCyan: {
     shadowColor: colors.secondary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.20,
+    shadowRadius: 10,
+    elevation: 4,
   } as ViewStyle,
 };

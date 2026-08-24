@@ -29,7 +29,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.iconCircle}>
-        <Ionicons name={iconName} size={40} color={colors.primaryLight} />
+        <Ionicons name={iconName} size={40} color={colors.primary} />
       </View>
 
       <Text style={styles.title}>{title}</Text>
@@ -58,7 +58,9 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,

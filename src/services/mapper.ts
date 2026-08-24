@@ -25,16 +25,21 @@ import {
  */
 export const mapToQrTracTemplateId = (template?: string): number => {
   switch (template) {
-    case 'modern_minimal':
-      return 1;
-    case 'vibrant_glass':
-      return 2;
-    case 'creative_designer':
-      return 3;
+    case 'professional':
     case 'corporate_executive':
       return 4;
+    case 'modern':
+    case 'modern_minimal':
+      return 1;
+    case 'minimal':
     case 'minimal_mono':
       return 1;
+    case 'vibrant':
+    case 'vibrant_glass':
+      return 2;
+    case 'creative':
+    case 'creative_designer':
+      return 3;
     default:
       return 1;
   }

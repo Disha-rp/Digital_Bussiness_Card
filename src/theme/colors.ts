@@ -1,66 +1,65 @@
 /**
- * Design System Color Palette & Tokens
- * Curated HSL-derived palette with dark-first surfaces, vibrant accents, and translucent overlays.
+ * Design System Color Palette & Tokens — Comprehensive Light Theme
+ * Polished, high-contrast, modern light color system.
  */
 
 export const colors = {
   // Brand Primary & Accents
-  primary: '#6366F1', // Indigo
-  primaryLight: '#818CF8',
-  primaryDark: '#4F46E5',
-  primaryGlow: 'rgba(99, 102, 241, 0.25)',
+  primary: '#2563EB', // Royal Blue
+  primaryLight: '#3B82F6',
+  primaryDark: '#1D4ED8',
+  primaryGlow: 'rgba(37, 99, 235, 0.15)',
 
   // Secondary & Accents
-  secondary: '#06B6D4', // Cyan
-  secondaryLight: '#22D3EE',
-  secondaryDark: '#0891B2',
-  secondaryGlow: 'rgba(6, 182, 212, 0.25)',
+  secondary: '#0EA5E9', // Sky Cyan
+  secondaryLight: '#38BDF8',
+  secondaryDark: '#0284C7',
+  secondaryGlow: 'rgba(14, 165, 233, 0.15)',
 
-  accent: '#EC4899', // Pink
-  accentLight: '#F472B6',
-  accentDark: '#DB2777',
+  accent: '#F59E0B', // Amber Gold
+  accentLight: '#FBBF24',
+  accentDark: '#D97706',
 
   // Status & Feedback Tokens
-  success: '#10B981', // Emerald
-  successLight: 'rgba(16, 185, 129, 0.15)',
+  success: '#16A34A', // Emerald
+  successLight: 'rgba(22, 163, 74, 0.12)',
   warning: '#F59E0B', // Amber
-  warningLight: 'rgba(245, 158, 11, 0.15)',
+  warningLight: 'rgba(245, 158, 11, 0.12)',
   error: '#EF4444', // Rose
-  errorLight: 'rgba(239, 68, 68, 0.15)',
-  info: '#3B82F6', // Blue
-  infoLight: 'rgba(59, 130, 246, 0.15)',
+  errorLight: 'rgba(239, 68, 68, 0.12)',
+  info: '#2563EB', // Blue
+  infoLight: 'rgba(37, 99, 235, 0.12)',
 
-  // Dark Theme Surfaces
-  background: '#090D16',
-  backgroundElevated: '#0F172A',
-  surface: '#111827',
-  surfaceElevated: '#1F2937',
-  surfaceGlass: 'rgba(17, 24, 39, 0.85)',
-  surfaceGlassLight: 'rgba(255, 255, 255, 0.08)',
-  border: 'rgba(255, 255, 255, 0.08)',
-  borderElevated: 'rgba(255, 255, 255, 0.15)',
-  borderActive: 'rgba(99, 102, 241, 0.5)',
-  borderGlow: 'rgba(99, 102, 241, 0.4)',
-
-  // Light Mode Fallback Tokens
-  lightBackground: '#F8FAFC',
-  lightSurface: '#FFFFFF',
-  lightBorder: 'rgba(0, 0, 0, 0.08)',
+  // Light Theme Surfaces
+  background: '#F8FAFC',
+  backgroundElevated: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F1F5F9',
+  surfaceGlass: 'rgba(255, 255, 255, 0.95)',
+  surfaceGlassLight: 'rgba(241, 245, 249, 0.8)',
+  border: '#E2E8F0',
+  borderElevated: '#CBD5E1',
+  borderActive: '#2563EB',
+  borderGlow: 'rgba(37, 99, 235, 0.25)',
 
   // Neutral Typography
-  textPrimary: '#F9FAFB',
-  textSecondary: '#9CA3AF',
-  textMuted: '#6B7280',
-  textInverse: '#111827',
+  textPrimary: '#0F172A',
+  textSecondary: '#475569',
+  textMuted: '#64748B',
+  textInverse: '#FFFFFF',
+
+  // Light Sub-accents
+  subtleAccent: '#DBEAFE',
+  subtleGreen: '#DCFCE7',
 
   // Curated Gradient Palettes
   gradients: {
-    primary: ['#6366F1', '#8B5CF6', '#EC4899'] as [string, string, string],
-    cyanIndigo: ['#06B6D4', '#3B82F6', '#6366F1'] as [string, string, string],
-    sunset: ['#F59E0B', '#EC4899', '#8B5CF6'] as [string, string, string],
-    modernDark: ['#0B0F19', '#111827', '#1E293B'] as [string, string, string],
-    executiveNavy: ['#0A192F', '#0F2744', '#1E3A8A'] as [string, string, string],
-    vibrantPink: ['#4C1D95', '#7C3AED', '#DB2777'] as [string, string, string],
-    glassOverlay: ['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.02)'] as [string, string],
+    primary: ['#2563EB', '#3B82F6', '#60A5FA'] as [string, string, string],
+    cyanIndigo: ['#0EA5E9', '#2563EB', '#1D4ED8'] as [string, string, string],
+    sunset: ['#F59E0B', '#EF4444', '#EC4899'] as [string, string, string],
+    modernLight: ['#FFFFFF', '#F0F9FF', '#E0F2FE'] as [string, string, string],
+    executiveLight: ['#FFFFFF', '#F8FAFC', '#F1F5F9'] as [string, string, string],
+    minimalLight: ['#FFFFFF', '#FAFAFA', '#F4F4F5'] as [string, string, string],
+    glassOverlay: ['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.6)'] as [string, string],
   },
 };

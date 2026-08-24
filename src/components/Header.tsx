@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     minHeight: 64,
@@ -75,7 +75,9 @@ const styles = StyleSheet.create({
   backBtn: {
     padding: 8,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     marginRight: spacing.md,
   },
   titleContainer: {

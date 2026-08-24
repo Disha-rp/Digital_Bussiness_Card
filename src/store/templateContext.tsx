@@ -17,14 +17,14 @@ export interface TemplateContextValue {
 const TemplateContext = createContext<TemplateContextValue | undefined>(undefined);
 
 export const TemplateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<CardTemplateId>('modern_minimal');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<CardTemplateId>('modern');
 
   const selectTemplate = useCallback((id: CardTemplateId) => {
     setSelectedTemplateId(id);
   }, []);
 
   const getTemplateById = useCallback((id: CardTemplateId): CardTemplate => {
-    return CARD_TEMPLATES[id] || CARD_TEMPLATES.modern_minimal;
+    return CARD_TEMPLATES[id] || CARD_TEMPLATES.modern;
   }, []);
 
   const selectedTemplate = useMemo(() => {

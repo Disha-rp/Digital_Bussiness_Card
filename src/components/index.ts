@@ -15,3 +15,4 @@ export * from './SocialLinkInput';
 export * from './TemplateCard';
 export * from './QRCodeView';
 export * from './BusinessCardItem';
+export * from './templates';

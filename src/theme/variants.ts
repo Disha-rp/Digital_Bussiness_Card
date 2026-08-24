@@ -1,11 +1,12 @@
 /**
- * Component Variants Tokens (Buttons, Inputs, Badges)
+ * Component Variants Tokens (Buttons, Inputs, Badges) — Light Theme
  */
 
 import { ViewStyle, TextStyle } from 'react-native';
 import { colors } from './colors';
 import { borderRadius } from './borderRadius';
 import { spacing } from './spacing';
+import { shadows } from './shadows';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -18,35 +19,40 @@ export interface ButtonVariantStyle {
 export const buttonVariants: Record<ButtonVariant, (disabled?: boolean) => ButtonVariantStyle> = {
   primary: (disabled) => ({
     container: {
-      backgroundColor: disabled ? colors.surfaceElevated : colors.primary,
+      backgroundColor: disabled ? '#E2E8F0' : colors.primary,
       borderWidth: 0,
-      opacity: disabled ? 0.6 : 1,
+      opacity: disabled ? 0.7 : 1,
+      ...(!disabled ? shadows.sm : {}),
     },
     text: {
       color: '#FFFFFF',
+      fontWeight: '700',
     },
   }),
 
   secondary: (disabled) => ({
     container: {
-      backgroundColor: disabled ? colors.surfaceElevated : colors.secondary,
+      backgroundColor: disabled ? '#E2E8F0' : colors.secondary,
       borderWidth: 0,
-      opacity: disabled ? 0.6 : 1,
+      opacity: disabled ? 0.7 : 1,
+      ...(!disabled ? shadows.sm : {}),
     },
     text: {
       color: '#FFFFFF',
+      fontWeight: '700',
     },
   }),
 
   outline: (disabled) => ({
     container: {
-      backgroundColor: 'transparent',
+      backgroundColor: '#FFFFFF',
       borderWidth: 1.5,
       borderColor: disabled ? colors.border : colors.primary,
       opacity: disabled ? 0.5 : 1,
     },
     text: {
-      color: disabled ? colors.textMuted : colors.primaryLight,
+      color: disabled ? colors.textMuted : colors.primary,
+      fontWeight: '700',
     },
   }),
 
@@ -58,17 +64,19 @@ export const buttonVariants: Record<ButtonVariant, (disabled?: boolean) => Butto
     },
     text: {
       color: disabled ? colors.textMuted : colors.textPrimary,
+      fontWeight: '600',
     },
   }),
 
   danger: (disabled) => ({
     container: {
-      backgroundColor: disabled ? colors.surfaceElevated : colors.error,
+      backgroundColor: disabled ? '#E2E8F0' : colors.error,
       borderWidth: 0,
       opacity: disabled ? 0.6 : 1,
     },
     text: {
       color: '#FFFFFF',
+      fontWeight: '700',
     },
   }),
 };
@@ -119,7 +127,7 @@ export interface InputVariantStyle {
 export const inputVariants: Record<InputVariant, InputVariantStyle> = {
   default: {
     container: {
-      backgroundColor: colors.surfaceElevated,
+      backgroundColor: '#FFFFFF',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: borderRadius.md,
@@ -133,9 +141,9 @@ export const inputVariants: Record<InputVariant, InputVariantStyle> = {
   },
   filled: {
     container: {
-      backgroundColor: colors.surface,
+      backgroundColor: '#F8FAFC',
       borderWidth: 1,
-      borderColor: 'transparent',
+      borderColor: colors.border,
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
       minHeight: 48,
@@ -147,7 +155,7 @@ export const inputVariants: Record<InputVariant, InputVariantStyle> = {
   },
   outline: {
     container: {
-      backgroundColor: 'transparent',
+      backgroundColor: '#FFFFFF',
       borderWidth: 1.5,
       borderColor: colors.border,
       borderRadius: borderRadius.md,
@@ -161,7 +169,7 @@ export const inputVariants: Record<InputVariant, InputVariantStyle> = {
   },
   focused: {
     container: {
-      backgroundColor: colors.surfaceElevated,
+      backgroundColor: '#FFFFFF',
       borderWidth: 1.5,
       borderColor: colors.primary,
       borderRadius: borderRadius.md,
@@ -175,7 +183,7 @@ export const inputVariants: Record<InputVariant, InputVariantStyle> = {
   },
   error: {
     container: {
-      backgroundColor: colors.surfaceElevated,
+      backgroundColor: '#FEF2F2',
       borderWidth: 1.5,
       borderColor: colors.error,
       borderRadius: borderRadius.md,

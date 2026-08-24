@@ -79,7 +79,7 @@ export const Avatar: React.FC<AvatarProps> = ({
       ) : initials ? (
         <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
       ) : (
-        <Ionicons name="person" size={iconSize} color={colors.primaryLight} />
+        <Ionicons name="person" size={iconSize} color={colors.primary} />
       )}
     </View>
   );
@@ -87,14 +87,14 @@ export const Avatar: React.FC<AvatarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: '#EFF6FF',
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   initials: {
-    color: colors.primaryLight,
-    fontWeight: '700',
+    color: colors.primary,
+    fontWeight: '800',
   },
 });

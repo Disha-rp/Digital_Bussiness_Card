@@ -13,9 +13,17 @@ import { RootNavigationProp, RouteProps } from '../types/navigation';
 import { useCards } from '../store';
 import { qrService } from '../services/qr.service';
 import { BusinessCard } from '../models/card';
+import { CardTemplateId } from '../models/template';
 import { CARD_TEMPLATES } from '../theme/templates';
 import { colors, theme } from '../theme';
-import { Avatar, ErrorState, LoadingIndicator, QRCodeView } from '../components';
+import {
+  Avatar,
+  ErrorState,
+  LoadingIndicator,
+  QRCodeView,
+  CardTemplate,
+  TemplatePicker,
+} from '../components';
 
 export const PreviewScreen: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
@@ -24,6 +32,7 @@ export const PreviewScreen: React.FC = () => {
 
   const cardId = route.params?.cardId;
   const [resolvedCard, setResolvedCard] = useState<BusinessCard | null>(null);
+  const [activeTemplate, setActiveTemplate] = useState<CardTemplateId>('modern');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +49,7 @@ export const PreviewScreen: React.FC = () => {
         if (found) {
           if (isMounted) {
             setResolvedCard(found);
+            setActiveTemplate(found.template || 'modern');
             setLoading(false);
           }
           return;
@@ -50,6 +60,7 @@ export const PreviewScreen: React.FC = () => {
       if (selectedCard && (!cardId || selectedCard.id === cardId)) {
         if (isMounted) {
           setResolvedCard(selectedCard);
+          setActiveTemplate(selectedCard.template || 'modern');
           setLoading(false);
         }
         return;
@@ -62,6 +73,7 @@ export const PreviewScreen: React.FC = () => {
           if (isMounted) {
             if (res.success && res.data) {
               setResolvedCard(res.data);
+              setActiveTemplate(res.data.template || 'modern');
             } else {
               setError(res.message || 'Card could not be loaded.');
             }
@@ -130,7 +142,6 @@ export const PreviewScreen: React.FC = () => {
   }
 
   const card = resolvedCard;
-  const templateConfig = CARD_TEMPLATES[card.template] || CARD_TEMPLATES.modern_minimal;
   const fullName = [card.contact.firstName, card.contact.lastName].filter(Boolean).join(' ') || card.name;
   const publicUrl =
     card.cloud?.publicUrl ||
@@ -149,7 +160,7 @@ export const PreviewScreen: React.FC = () => {
             navigation.navigate('EditCard', {
               cardId: card.id,
               cardTitle: card.name,
-              templateId: card.template,
+              templateId: activeTemplate,
             })
           }
         >
@@ -161,90 +172,21 @@ export const PreviewScreen: React.FC = () => {
         <Text style={styles.sectionHeader}>Live Card Presentation</Text>
         <Text style={styles.sectionSub}>Dynamic QRTRAC Digital Business Card</Text>
 
-        {/* Card Presentation Shell */}
-        <View style={[styles.previewBox, { borderColor: templateConfig.style.borderColor }]}>
-          {/* Header with Avatar & Details */}
-          <View style={styles.cardTop}>
-            <Avatar
-              uri={card.profilePhoto}
-              name={fullName}
-              size="lg"
-              borderColor={templateConfig.style.accentColor}
-              style={styles.avatar}
-            />
+        {/* Interactive Template Selector */}
+        <TemplatePicker
+          selectedTemplate={activeTemplate}
+          onSelectTemplate={(tmpl) => setActiveTemplate(tmpl)}
+          compact={false}
+          style={styles.templatePickerSection}
+        />
 
-            <View style={styles.cardDetails}>
-              <Text style={styles.cardName} numberOfLines={2}>
-                {fullName}
-              </Text>
-              {card.contact.title ? (
-                <Text style={[styles.cardRole, { color: templateConfig.style.accentColor }]} numberOfLines={1}>
-                  {card.contact.title}
-                </Text>
-              ) : null}
-              {card.contact.company ? (
-                <Text style={styles.cardCompany} numberOfLines={1}>
-                  {card.contact.company}
-                </Text>
-              ) : null}
-            </View>
-          </View>
-
-          {/* Contact Details List */}
-          <View style={styles.contactSection}>
-            {card.contact.email ? (
-              <View style={styles.contactRow}>
-                <Ionicons name="mail-outline" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                <Text style={styles.contactText} numberOfLines={1}>
-                  {card.contact.email}
-                </Text>
-              </View>
-            ) : null}
-
-            {card.contact.phoneMobile ? (
-              <View style={styles.contactRow}>
-                <Ionicons name="call-outline" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                <Text style={styles.contactText} numberOfLines={1}>
-                  {card.contact.phoneMobile}
-                </Text>
-              </View>
-            ) : null}
-
-            {card.contact.website ? (
-              <View style={styles.contactRow}>
-                <Ionicons name="globe-outline" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                <Text style={styles.contactText} numberOfLines={1}>
-                  {card.contact.website}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* QR Code Presentation Box */}
-          <View style={styles.qrSection}>
-            <QRCodeView
-              imageUrl={card.cloud?.qrImageUrl}
-              value={publicUrl || (card.cloud?.displayId ? `https://qrtrac.link/${card.cloud.displayId}` : `https://qrtrac.me/${card.id}`)}
-              size={140}
-              backgroundColor="#FFFFFF"
-              color="#000000"
-            />
-          </View>
-
-          {/* Meta Badges */}
-          <View style={styles.badgeRow}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Template: {templateConfig.name}</Text>
-            </View>
-            {card.cloud?.displayId ? (
-              <View style={[styles.badge, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}>
-                <Text style={[styles.badgeText, { color: colors.secondary }]}>
-                  /{card.cloud.displayId}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
+        {/* Modular Presentation Template Renderer */}
+        <CardTemplate
+          card={card}
+          template={activeTemplate}
+          showQr={true}
+          style={styles.cardTemplateWrapper}
+        />
 
         {/* Share Action */}
         <TouchableOpacity
@@ -278,18 +220,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   backBtn: {
-    padding: 6,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: colors.surfaceElevated,
+    padding: 8,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   editHeaderBtn: {
-    padding: 6,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    padding: 8,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
   },
   headerTitle: {
     fontSize: 18,
@@ -301,6 +248,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: theme.spacing.lg,
+    backgroundColor: colors.background,
   },
   content: {
     padding: theme.spacing.lg,
@@ -308,13 +256,20 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.textPrimary,
+    letterSpacing: -0.3,
   },
   sectionSub: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
-    marginTop: theme.spacing.xs,
+    marginTop: 2,
+    marginBottom: theme.spacing.md,
+  },
+  templatePickerSection: {
+    marginBottom: theme.spacing.md,
+  },
+  cardTemplateWrapper: {
     marginBottom: theme.spacing.lg,
   },
   previewBox: {

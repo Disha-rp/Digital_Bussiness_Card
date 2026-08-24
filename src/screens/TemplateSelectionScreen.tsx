@@ -20,7 +20,7 @@ export const TemplateSelectionScreen: React.FC = () => {
   const cardId = route.params?.cardId;
   const isCreateMode = route.params?.mode === 'create' || !cardId;
 
-  const [selectedTemplate, setSelectedTemplate] = useState<CardTemplateId>('modern_minimal');
+  const [selectedTemplate, setSelectedTemplate] = useState<CardTemplateId>('modern');
 
   const handleContinue = () => {
     if (isCreateMode) {
@@ -125,13 +125,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   backBtn: {
-    padding: 6,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: colors.surfaceElevated,
+    padding: 8,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   headerTitle: {
     fontSize: 18,
@@ -144,13 +147,14 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.textPrimary,
+    letterSpacing: -0.3,
   },
   sectionSub: {
     fontSize: 13,
     color: colors.textSecondary,
-    marginTop: theme.spacing.xs,
+    marginTop: 2,
     marginBottom: theme.spacing.lg,
   },
   templateList: {
@@ -160,14 +164,16 @@ const styles = StyleSheet.create({
   templateCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: theme.borderRadius.lg,
-    borderWidth: 1.5,
     padding: theme.spacing.md,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   templateCardActive: {
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 2,
   },
   colorAccentBar: {
     width: 5,
@@ -195,7 +201,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tagBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#F1F5F9',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: theme.borderRadius.sm,
@@ -203,13 +209,14 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 10,
     color: colors.textMuted,
+    fontWeight: '600',
   },
   unselectedRadio: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: '#CBD5E1',
   },
   primaryButton: {
     flexDirection: 'row',
