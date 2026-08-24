@@ -240,6 +240,11 @@ describe('Phase 6 — Create Digital Business Card Workflow', () => {
       expect(res.success).toBe(true);
       expect(res.uri).toBe('file:///local/camera.jpg');
     });
+
+    it('downscaleImageWeb safely returns sourceUri in non-browser environments', async () => {
+      const result = await ImageService.downscaleImageWeb('data:image/jpeg;base64,TEST', 400, 0.7);
+      expect(result).toBe('data:image/jpeg;base64,TEST');
+    });
   });
 
   describe('5. Profile Photo Field Mapping in CardMapper', () => {
