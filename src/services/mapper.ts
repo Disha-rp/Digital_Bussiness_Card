@@ -79,13 +79,22 @@ export const CardMapper = {
 
     // Map theme with fallback
     const validTemplates: CardTemplateId[] = [
+      'professional',
+      'modern',
+      'minimal',
       'modern_minimal',
       'corporate_executive',
+      'minimal_mono',
       'vibrant_glass',
+      'creative_designer',
     ];
-    const template: CardTemplateId = validTemplates.includes(meta.cardTheme)
-      ? meta.cardTheme
-      : 'modern_minimal';
+    let template: CardTemplateId = 'modern';
+    if (meta.cardTheme && validTemplates.includes(meta.cardTheme)) {
+      template = meta.cardTheme;
+    } else if (qr.templateId) {
+      if (Number(qr.templateId) === 4) template = 'professional';
+      else if (Number(qr.templateId) === 1) template = 'modern';
+    }
 
     return {
       id: qr.id,

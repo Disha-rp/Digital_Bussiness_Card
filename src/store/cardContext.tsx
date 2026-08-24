@@ -36,6 +36,7 @@ export interface CardContextValue {
   searchCards: (query: string) => Promise<void>;
   setCards: (cards: BusinessCard[]) => void;
   addCard: (card: BusinessCard) => void;
+  updateCardInStore: (card: BusinessCard) => void;
   selectCard: (id: string | null) => void;
   setEditorDraft: (draft: CardEditorDraft | null) => void;
   updateEditorDraft: (fields: Partial<CardEditorDraft>) => void;
@@ -180,6 +181,12 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   }, []);
 
+  const updateCardInStore = useCallback((updatedCard: BusinessCard) => {
+    setCardsState((prev) =>
+      prev.map((c) => (c.id === updatedCard.id ? updatedCard : c))
+    );
+  }, []);
+
   const selectCard = useCallback((id: string | null) => {
     setSelectedCardId(id);
   }, []);
@@ -240,6 +247,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       searchCards,
       setCards,
       addCard,
+      updateCardInStore,
       selectCard,
       setEditorDraft,
       updateEditorDraft,
@@ -265,6 +273,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       searchCards,
       setCards,
       addCard,
+      updateCardInStore,
       selectCard,
       setEditorDraft,
       updateEditorDraft,
