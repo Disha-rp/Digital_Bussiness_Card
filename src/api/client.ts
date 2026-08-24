@@ -39,7 +39,7 @@ export class ApiClient {
     initialCredentials?: QrTracCredentials | null;
   } = {}) {
     this.defaultBaseUrl = config.baseUrl || 'https://api.qrtrac.com/api';
-    this.defaultTimeoutMs = config.timeoutMs !== undefined ? config.timeoutMs : 10000;
+    this.defaultTimeoutMs = config.timeoutMs !== undefined ? config.timeoutMs : 20000;
     this.maxRetries = config.maxRetries !== undefined ? config.maxRetries : 2;
     this.activeCredentials = config.initialCredentials !== undefined ? config.initialCredentials : getEnvCredentials();
   }
@@ -92,9 +92,9 @@ export class ApiClient {
     if (!bypassAuth) {
       const creds = credentialsOverride || this.activeCredentials;
       if (creds) {
-        if (creds.teamId) headers['x-request-team-id'] = creds.teamId.trim();
-        if (creds.clientId) headers['x-request-client-id'] = creds.clientId.trim();
-        if (creds.clientSecret) headers['x-request-client-secret'] = creds.clientSecret.trim();
+        if (creds.teamId && creds.teamId.trim()) headers['x-request-team-id'] = creds.teamId.trim();
+        if (creds.clientId && creds.clientId.trim()) headers['x-request-client-id'] = creds.clientId.trim();
+        if (creds.clientSecret && creds.clientSecret.trim()) headers['x-request-client-secret'] = creds.clientSecret.trim();
       }
     }
 
@@ -228,6 +228,7 @@ export class ApiClient {
 
     try {
       const response = await fetch(url, {
+        mode: 'cors',
         ...fetchOptions,
         headers,
         signal: controller.signal,
