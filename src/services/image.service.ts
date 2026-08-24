@@ -5,7 +5,7 @@
  */
 
 import * as ImagePicker from 'expo-image-picker';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 export interface ImagePickerResult {
   success: boolean;
@@ -20,21 +20,24 @@ export const ImageService = {
    */
   async pickFromLibrary(): Promise<ImagePickerResult> {
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          'Photo Access Required',
-          'Please allow access to your photos in device settings to select a profile image.',
-          [{ text: 'OK' }]
-        );
-        return { success: false, error: 'Permission denied' };
+      // On Web, requesting permissions is unnecessary and awaiting it can lose browser user activation
+      if (Platform.OS !== 'web') {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert(
+            'Photo Access Required',
+            'Please allow access to your photos in device settings to select a profile image.',
+            [{ text: 'OK' }]
+          );
+          return { success: false, error: 'Permission denied' };
+        }
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.8,
         base64: true,
       });
 
@@ -64,20 +67,22 @@ export const ImageService = {
    */
   async takePhoto(): Promise<ImagePickerResult> {
     try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          'Camera Access Required',
-          'Please allow camera access in device settings to take a profile photo.',
-          [{ text: 'OK' }]
-        );
-        return { success: false, error: 'Permission denied' };
+      if (Platform.OS !== 'web') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert(
+            'Camera Access Required',
+            'Please allow camera access in device settings to take a profile photo.',
+            [{ text: 'OK' }]
+          );
+          return { success: false, error: 'Permission denied' };
+        }
       }
 
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.8,
         base64: true,
       });
 

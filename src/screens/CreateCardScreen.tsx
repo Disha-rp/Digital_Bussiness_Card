@@ -22,6 +22,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -133,8 +134,21 @@ export const CreateCardScreen: React.FC = () => {
     if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
   };
 
-  // Image Selection Handlers
+  // Direct Image Picker Handler for Web & Native
+  const handlePickFromLibraryDirect = async () => {
+    const res = await ImageService.pickFromLibrary();
+    if (res.success && res.uri) {
+      setProfilePhoto(res.uri);
+    }
+  };
+
+  // Image Selection Handler (Action Sheet on Native, Direct Picker on Web)
   const handleChoosePhoto = () => {
+    if (Platform.OS === 'web') {
+      handlePickFromLibraryDirect();
+      return;
+    }
+
     Alert.alert(
       'Profile Photo',
       'Select a photo for your digital business card',
@@ -383,22 +397,35 @@ export const CreateCardScreen: React.FC = () => {
             borderColor={templateConfig.style.accentColor}
             style={styles.avatarPreview}
           />
-          <TouchableOpacity
-            style={styles.photoActionBtn}
-            onPress={handleChoosePhoto}
-            activeOpacity={0.8}
-            testID="photo-picker-btn"
-          >
-            <Ionicons
-              name={profilePhoto ? 'camera-reverse-outline' : 'camera-outline'}
-              size={18}
-              color={colors.primaryLight}
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.photoActionText}>
-              {profilePhoto ? 'Change Photo' : 'Upload Profile Photo'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.photoButtonRow}>
+            <TouchableOpacity
+              style={styles.photoActionBtn}
+              onPress={handleChoosePhoto}
+              activeOpacity={0.8}
+              testID="photo-picker-btn"
+            >
+              <Ionicons
+                name={profilePhoto ? 'camera-reverse-outline' : 'camera-outline'}
+                size={18}
+                color={colors.primaryLight}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.photoActionText}>
+                {profilePhoto ? 'Change Photo' : 'Upload Profile Photo'}
+              </Text>
+            </TouchableOpacity>
+            {profilePhoto ? (
+              <TouchableOpacity
+                style={styles.photoRemoveBtn}
+                onPress={() => setProfilePhoto(undefined)}
+                activeOpacity={0.8}
+                testID="photo-remove-btn"
+              >
+                <Ionicons name="trash-outline" size={15} color={colors.error} style={{ marginRight: 4 }} />
+                <Text style={styles.photoRemoveText}>Remove</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {/* Form Fields Card */}
@@ -751,6 +778,11 @@ const styles = StyleSheet.create({
   avatarPreview: {
     marginBottom: theme.spacing.sm,
   },
+  photoButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   photoActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -762,6 +794,19 @@ const styles = StyleSheet.create({
   photoActionText: {
     fontSize: 13,
     color: colors.primaryLight,
+    fontWeight: '600',
+  },
+  photoRemoveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+  },
+  photoRemoveText: {
+    fontSize: 12,
+    color: colors.error,
     fontWeight: '600',
   },
   formCard: {
