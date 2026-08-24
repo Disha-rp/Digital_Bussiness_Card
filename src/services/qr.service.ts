@@ -6,7 +6,7 @@
 import { ApiClient, defaultApiClient } from '../api/client';
 import { ApiResponse, PaginatedResult } from '../models/api';
 import { BusinessCard, CardEditorDraft } from '../models/card';
-import { CardMapper } from './mapper';
+import { CardMapper, mapToQrTracTemplateId } from './mapper';
 import {
   QrTracQr,
   QrTracTemplate,
@@ -104,7 +104,7 @@ export class QrService implements IQrService {
 
   /**
    * Get single card/QR details by ID.
-   * Endpoint: GET /qrs-api/{id}
+   * Endpoint: GET /qrs-api/teams/{id}
    */
   async getCard(id: string): Promise<ApiResponse<BusinessCard>> {
     const response = await this.client.request<QrTracQr>(
@@ -131,30 +131,82 @@ export class QrService implements IQrService {
 
   /**
    * Create a new VCARD digital business card in QRTRAC.
-   * Endpoint: POST /qrs-api
+   * Implements the dashboard-equivalent 2-step lifecycle:
+   * 1. POST /qrs-api: Allocates card entity with string templateId compatible with API gateway schema.
+   * 2. PUT /qrs-api/{id}: Immediately publishes complete card payload with numeric templateId (1-4),
+   *    frameId: 0, and baseUrl to synchronize QRTRAC's public edge cache (refreshedAt) for instant rendering.
    */
   async createCard(draft: CardEditorDraft): Promise<ApiResponse<BusinessCard>> {
-    const payload: CreateQrRequest = CardMapper.toCreateQrRequest(draft);
+    const createPayload: CreateQrRequest = CardMapper.toCreateQrRequest(draft);
 
-    const response = await this.client.request<QrTracQr>('/qrs-api', {
+    const postResponse = await this.client.request<QrTracQr>('/qrs-api', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(createPayload),
     });
 
-    if (!response.success || !response.data) {
+    if (!postResponse.success || !postResponse.data) {
       return {
         success: false,
         data: null as unknown as BusinessCard,
-        message: response.message,
-        error: response.error,
+        message: postResponse.message || 'Failed to initialize card creation.',
+        error: postResponse.error,
       };
     }
 
-    const createdCard = CardMapper.toBusinessCard(response.data);
+    const createdId = postResponse.data.id;
+    if (!createdId) {
+      return {
+        success: false,
+        data: null as unknown as BusinessCard,
+        message: 'Server returned a card without a valid ID.',
+        error: {
+          type: 'SERVER_ERROR',
+          message: 'Server returned a card without a valid ID.',
+          isRetryable: false,
+        },
+      };
+    }
+
+    // Step 2: Publish complete card payload via PUT with numeric templateId (1-4)
+    const updatePayload: UpdateQrRequest = CardMapper.toUpdateQrRequest({
+      ...draft,
+      displayId: postResponse.data.displayId || draft.displayId,
+    });
+
+    const putResponse = await this.client.request<QrTracQr>(
+      `/qrs-api/${encodeURIComponent(createdId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(updatePayload),
+      }
+    );
+
+    if (!putResponse.success || !putResponse.data) {
+      return {
+        success: false,
+        data: null as unknown as BusinessCard,
+        message:
+          putResponse.message ||
+          'Card initialized on server, but failed to publish template configuration to public edge cache.',
+        error: putResponse.error || {
+          type: 'SERVER_ERROR',
+          message: 'Failed to publish template configuration to public edge cache.',
+          isRetryable: false,
+        },
+      };
+    }
+
+    const finalQrData: QrTracQr = {
+      ...postResponse.data,
+      ...putResponse.data,
+      templateId: mapToQrTracTemplateId(draft.template),
+    };
+
+    const createdCard = CardMapper.toBusinessCard(finalQrData);
     return {
       success: true,
       data: createdCard,
-      message: response.message,
+      message: 'Card created and published successfully.',
     };
   }
 

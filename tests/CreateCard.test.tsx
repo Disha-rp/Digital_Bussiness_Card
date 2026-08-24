@@ -41,7 +41,7 @@ jest.mock('expo-image-picker', () => ({
 
 jest.mock('../src/services/qr.service');
 
-import { CardMapper } from '../src/services/mapper';
+import { CardMapper, mapToQrTracTemplateId } from '../src/services/mapper';
 import { qrService } from '../src/services/qr.service';
 import { ImageService } from '../src/services/image.service';
 import { CardEditorDraft, BusinessCard } from '../src/models/card';
@@ -288,6 +288,26 @@ describe('Phase 6 — Create Digital Business Card Workflow', () => {
       expect(payload.contactInformation?.length).toBeGreaterThan(0);
       expect(payload.metadata?.cardTheme).toBe('corporate_executive');
       expect(payload.metadata?.profileImage).toBe('file:///data/user/0/avatar.jpg');
+    });
+
+    it('maps CardEditorDraft into complete PUT UpdateQrRequest with numeric templateId and frameId: 0', () => {
+      const updatePayload = CardMapper.toUpdateQrRequest(sampleDraft);
+
+      expect(updatePayload.templateId).toBe(4); // Numeric 4 for public edge renderer
+      expect(typeof updatePayload.templateId).toBe('number');
+      expect(updatePayload.frameId).toBe(0);
+      expect(updatePayload.baseUrl).toBe('https://qrtrac.link/');
+      expect(updatePayload.professionalDetails?.company).toBe('SkyNet Defense');
+      expect(updatePayload.professionalDetails?.designation).toBe('Cyber Security Lead');
+      expect(updatePayload.contactInformation?.length).toBeGreaterThan(0);
+    });
+
+    it('correctly maps all 5 local template IDs to QRTRAC template IDs (1-4)', () => {
+      expect(mapToQrTracTemplateId('modern_minimal')).toBe(1);
+      expect(mapToQrTracTemplateId('minimal_mono')).toBe(1);
+      expect(mapToQrTracTemplateId('vibrant_glass')).toBe(2);
+      expect(mapToQrTracTemplateId('creative_designer')).toBe(3);
+      expect(mapToQrTracTemplateId('corporate_executive')).toBe(4);
     });
   });
 

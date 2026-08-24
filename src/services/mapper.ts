@@ -291,9 +291,20 @@ export const CardMapper = {
   },
 
   /**
-   * Maps a partial draft or BusinessCard into a verified QRTRAC UpdateQrRequest payload
+   * Maps a partial draft or BusinessCard into a complete verified QRTRAC UpdateQrRequest payload
+   * for the follow-up PUT publication step, setting numeric templateId (1-4), frameId: 0, and baseUrl
+   * to trigger QRTRAC's edge cache publication worker (refreshedAt).
    */
   toUpdateQrRequest(draft: Partial<CardEditorDraft> | BusinessCard): UpdateQrRequest {
-    return CardMapper.toCreateQrRequest(draft as any);
+    const baseRequest = CardMapper.toCreateQrRequest(draft as any);
+    const template = 'template' in draft ? draft.template : draft.template;
+    const numericTemplateId = mapToQrTracTemplateId(template);
+
+    return {
+      ...baseRequest,
+      templateId: numericTemplateId, // Number 1-4 for public edge renderer
+      frameId: 0,
+      baseUrl: 'https://qrtrac.link/',
+    };
   },
 };

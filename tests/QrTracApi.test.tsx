@@ -170,6 +170,7 @@ describe('QRTRAC API Client & Service Layer', () => {
         ],
       };
 
+      // Mock 1: POST /qrs-api
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 201,
@@ -186,13 +187,40 @@ describe('QRTRAC API Client & Service Layer', () => {
               designation: 'Head of Growth',
               company: 'Apex Labs',
               displayId: 'sarah-growth',
+              templateId: '1',
+            },
+          }),
+      });
+
+      // Mock 2: PUT /qrs-api/qr_created_789
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        text: async () =>
+          JSON.stringify({
+            success: true,
+            data: {
+              ...sampleQrResponse,
+              id: 'qr_created_789',
+              name: 'Sarah Chen',
+              firstName: 'Sarah',
+              lastName: 'Chen',
+              designation: 'Head of Growth',
+              company: 'Apex Labs',
+              displayId: 'sarah-growth',
+              templateId: 1, // Numeric templateId
             },
           }),
       });
 
       const result = await service.createCard(draft);
 
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      // Verify Step 1: POST /qrs-api
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
         'https://api.qrtrac.com/api/qrs-api',
         expect.objectContaining({
           method: 'POST',
@@ -200,9 +228,79 @@ describe('QRTRAC API Client & Service Layer', () => {
         })
       );
 
+      // Verify Step 2: PUT /qrs-api/qr_created_789 with numeric templateId, frameId: 0, and baseUrl
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        'https://api.qrtrac.com/api/qrs-api/qr_created_789',
+        expect.objectContaining({
+          method: 'PUT',
+          body: expect.stringContaining('"templateId":2'),
+        })
+      );
+
       expect(result.success).toBe(true);
       expect(result.data.id).toBe('qr_created_789');
       expect(result.data.contact.company).toBe('Apex Labs');
+      expect(result.data.cloud?.templateId).toBe('2');
+    });
+
+    it('handles publication PUT failure safely and returns error without claiming success', async () => {
+      const draft: CardEditorDraft = {
+        name: 'Failure Test',
+        firstName: 'Fail',
+        lastName: 'User',
+        designation: 'Tester',
+        company: 'FailCo',
+        phoneMobile: '',
+        phoneWork: '',
+        email: 'fail@fail.co',
+        website: '',
+        street: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: '',
+        bio: '',
+        notes: '',
+        template: 'vibrant_glass',
+        displayId: 'fail-user',
+        tags: [],
+        socialLinks: [],
+      };
+
+      // Mock 1: POST succeeds
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        headers: new Headers(),
+        text: async () =>
+          JSON.stringify({
+            success: true,
+            data: {
+              ...sampleQrResponse,
+              id: 'qr_fail_123',
+              displayId: 'fail-user',
+            },
+          }),
+      });
+
+      // Mock 2: PUT fails with 500
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        headers: new Headers(),
+        text: async () =>
+          JSON.stringify({
+            success: false,
+            message: 'Internal server error on PUT.',
+          }),
+      });
+
+      const result = await service.createCard(draft);
+
+      expect(result.success).toBe(false);
+      expect(result.data).toBeNull();
+      expect(result.error).toBeDefined();
     });
   });
 

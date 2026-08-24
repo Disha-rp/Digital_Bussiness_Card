@@ -116,6 +116,7 @@ export interface CreateQrRequest extends QrTracVCardPayloadFields {
   contactInformation?: QrTracContactInformationItem[];
   themeSettings?: QrTracThemeSettings;
   baseUrl?: string;
+  frameId?: number;
 }
 
 /**
