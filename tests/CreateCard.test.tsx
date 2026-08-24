@@ -282,6 +282,10 @@ describe('Phase 6 — Create Digital Business Card Workflow', () => {
       expect(payload.landline).toBe('+1-555-0100');
       expect(payload.website).toBe('https://sarahconnor.security');
       expect(payload.displayId).toBe('sarah-connor');
+      expect(payload.templateId).toBe('4');
+      expect(payload.professionalDetails?.company).toBe('SkyNet Defense');
+      expect(payload.professionalDetails?.designation).toBe('Cyber Security Lead');
+      expect(payload.contactInformation?.length).toBeGreaterThan(0);
       expect(payload.metadata?.cardTheme).toBe('corporate_executive');
       expect(payload.metadata?.profileImage).toBe('file:///data/user/0/avatar.jpg');
     });

@@ -1,6 +1,8 @@
 /**
  * BusinessCard and QRTRAC API Bidirectional Data Mapper
  * Isolates QRTRAC API response envelopes and request schemas from the UI.
+ * Ensures bidirectional compatibility between local presentation models and
+ * QRTRAC's public landing page renderer (templateId 1-4, contactInformation, professionalDetails).
  */
 
 import { BusinessCard, CardEditorDraft } from '../models/card';
@@ -11,7 +13,32 @@ import {
   CreateQrRequest,
   UpdateQrRequest,
   QrTracScanOverviewItem,
+  QrTracContactInformationItem,
 } from '../types/qrtrac';
+
+/**
+ * Maps local UI template identifiers to verified QRTRAC public web renderer template IDs (1-4).
+ * 1: Standard Modern / Clean layout (buildTemplate1)
+ * 2: Border Accent layout (buildTemplate2)
+ * 3: Banner Header layout (buildTemplate3)
+ * 4: Executive Summary layout (buildTemplate4)
+ */
+export const mapToQrTracTemplateId = (template?: string): number => {
+  switch (template) {
+    case 'modern_minimal':
+      return 1;
+    case 'vibrant_glass':
+      return 2;
+    case 'creative_designer':
+      return 3;
+    case 'corporate_executive':
+      return 4;
+    case 'minimal_mono':
+      return 1;
+    default:
+      return 1;
+  }
+};
 
 export const CardMapper = {
   /**
@@ -69,8 +96,8 @@ export const CardMapper = {
         firstName: qr.firstName || undefined,
         lastName: qr.lastName || undefined,
         displayName,
-        title: qr.designation || undefined,
-        company: qr.company || undefined,
+        title: qr.designation || qr.professionalDetails?.designation || undefined,
+        company: qr.company || qr.professionalDetails?.company || undefined,
         email: qr.email || undefined,
         phoneMobile: qr.mobile || undefined,
         phoneWork: qr.landline || undefined,
@@ -99,7 +126,7 @@ export const CardMapper = {
         publicUrl:
           qr.qrRedirectUrl ||
           (qr.displayId ? `${(qr.baseUrl || 'https://qrtrac.link').replace(/\/+$/, '')}/${qr.displayId}` : undefined),
-        templateId: (qr as any).templateId || undefined,
+        templateId: qr.templateId !== undefined ? String(qr.templateId) : undefined,
         batchId: qr.batchId,
         isSynced: true,
         lastSyncedAt: Date.now(),
@@ -117,7 +144,9 @@ export const CardMapper = {
   },
 
   /**
-   * Maps a BusinessCard or CardEditorDraft into a verified QRTRAC CreateQrRequest payload
+   * Maps a BusinessCard or CardEditorDraft into a verified QRTRAC CreateQrRequest payload.
+   * Embeds templateId (1-4), structured professionalDetails, contactInformation, and themeSettings
+   * required by QRTRAC's public web renderer, while maintaining full backward-compatibility with flat root fields.
    */
   toCreateQrRequest(draft: CardEditorDraft | BusinessCard): CreateQrRequest {
     const isDraft = 'firstName' in draft;
@@ -152,6 +181,77 @@ export const CardMapper = {
     const addressParts = [street, city, state, postalCode, country].filter(Boolean);
     const address = addressParts.join(', ');
 
+    // Determine verified QRTRAC numeric templateId (1-4)
+    const numericTemplateId =
+      typeof qrtracTemplateId === 'number'
+        ? qrtracTemplateId
+        : typeof qrtracTemplateId === 'string' && !isNaN(Number(qrtracTemplateId))
+        ? Number(qrtracTemplateId)
+        : mapToQrTracTemplateId(template);
+
+    // Build structured contactInformation array for QRTRAC public web renderer
+    const contactInformation: QrTracContactInformationItem[] = [];
+    if (mobile?.trim()) {
+      contactInformation.push({
+        type: 'Phone',
+        phoneNumber: {
+          countryCode: '',
+          phoneNumber: mobile.trim(),
+          phoneType: 'Mobile',
+        },
+      });
+    }
+    if (landline?.trim()) {
+      contactInformation.push({
+        type: 'Phone',
+        phoneNumber: {
+          countryCode: '',
+          phoneNumber: landline.trim(),
+          phoneType: 'Work',
+        },
+      });
+    }
+    if (email?.trim()) {
+      contactInformation.push({
+        type: 'Email',
+        email: {
+          email: email.trim(),
+          emailType: 'Work',
+        },
+      });
+    }
+    if (website?.trim()) {
+      contactInformation.push({
+        type: 'Website',
+        website: {
+          website: website.trim(),
+          title: 'Website',
+        },
+      });
+    }
+    if (addressParts.length > 0) {
+      contactInformation.push({
+        type: 'Address',
+        address: {
+          street: street?.trim(),
+          city: city?.trim(),
+          state: state?.trim(),
+          postalCode: postalCode?.trim(),
+          country: country?.trim(),
+        },
+      });
+    }
+
+    // Determine theme accent color
+    const themeColorMap: Record<string, string> = {
+      modern_minimal: '#3B82F6',
+      vibrant_glass: '#8B5CF6',
+      creative_designer: '#EC4899',
+      corporate_executive: '#1E293B',
+      minimal_mono: '#18181B',
+    };
+    const backgroundColor = themeColorMap[template] || '#3B82F6';
+
     return {
       name: formattedName,
       qrType: 'VCARD',
@@ -171,7 +271,16 @@ export const CardMapper = {
       country: country?.trim() || undefined,
       bio: bio?.trim() || undefined,
       displayId: displayId?.trim() || undefined,
-      templateId: qrtracTemplateId || undefined,
+      templateId: String(numericTemplateId),
+      professionalDetails: {
+        company: company?.trim() || undefined,
+        designation: designation?.trim() || undefined,
+      },
+      contactInformation,
+      themeSettings: {
+        backgroundColor,
+        hideSaveButton: false,
+      },
       tags: tags || [],
       metadata: {
         cardTheme: template,

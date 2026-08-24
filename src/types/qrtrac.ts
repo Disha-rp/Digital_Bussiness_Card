@@ -62,6 +62,42 @@ export interface QrSettings {
   [key: string]: unknown;
 }
 
+export interface QrTracProfessionalDetails {
+  company?: string;
+  designation?: string;
+  pronoun?: string;
+}
+
+export interface QrTracContactInformationItem {
+  type: 'Phone' | 'Email' | 'Website' | 'Address' | 'Note';
+  phoneNumber?: {
+    countryCode?: string;
+    phoneNumber?: string;
+    phoneType?: string;
+    extension?: string;
+  };
+  email?: {
+    email?: string;
+    emailType?: string;
+  };
+  website?: {
+    website?: string;
+    title?: string;
+  };
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
+}
+
+export interface QrTracThemeSettings {
+  backgroundColor?: string;
+  hideSaveButton?: boolean;
+}
+
 /**
  * Payload for POST /qrs-api
  */
@@ -75,7 +111,10 @@ export interface CreateQrRequest extends QrTracVCardPayloadFields {
   tags?: string[];
   folderId?: string; // Note: Marked as "Coming Soon" in QRTRAC spec
   folderIds?: string[]; // Note: Marked as "Coming Soon" in QRTRAC spec
-  templateId?: string;
+  templateId?: number | string;
+  professionalDetails?: QrTracProfessionalDetails;
+  contactInformation?: QrTracContactInformationItem[];
+  themeSettings?: QrTracThemeSettings;
   baseUrl?: string;
 }
 
@@ -100,6 +139,10 @@ export interface QrTracQr extends QrTracVCardPayloadFields {
   qrImageHash?: string;
   metadata?: Record<string, unknown>;
   settings?: QrSettings;
+  templateId?: number | string;
+  professionalDetails?: QrTracProfessionalDetails;
+  contactInformation?: QrTracContactInformationItem[];
+  themeSettings?: QrTracThemeSettings;
   tags?: string[];
   folderId?: string;
   folderIds?: string[];
