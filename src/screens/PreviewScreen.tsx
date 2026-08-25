@@ -42,6 +42,7 @@ import {
   TemplatePicker,
   PreviewActions,
   ExportModal,
+  ShareModal,
 } from '../components';
 import {
   downloadVCard,
@@ -50,6 +51,10 @@ import {
   exportBusinessCard,
   ExportFormat,
   ExportResult,
+  shareBusinessCardAction,
+  ShareFormat,
+  ShareResult,
+  getPublicCardUrl,
 } from '../utils';
 
 export const PreviewScreen: React.FC = () => {
@@ -68,6 +73,7 @@ export const PreviewScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Auto-dismiss toast notification
@@ -156,16 +162,31 @@ export const PreviewScreen: React.FC = () => {
     });
   }, [navigation, resolvedCard, activeTemplate]);
 
-  const handleSharePress = useCallback(async () => {
+  const cardRef = React.useRef<View>(null);
+
+  const handleSharePress = useCallback(() => {
     if (!resolvedCard) return;
-    const res = await shareBusinessCard(resolvedCard);
-    if (res.message) {
-      setToastMessage(res.message);
-      if (Platform.OS !== 'web') {
-        Alert.alert('Share Card', res.message);
-      }
-    }
+    setShowShareModal(true);
   }, [resolvedCard]);
+
+  const handlePerformShare = useCallback(
+    async (format: ShareFormat): Promise<ShareResult> => {
+      if (!resolvedCard) {
+        return {
+          success: false,
+          message: 'Unable to share card',
+          format,
+        };
+      }
+
+      const result = await shareBusinessCardAction(resolvedCard, format, activeTemplate, cardRef);
+      if (result.message && !result.cancelled) {
+        setToastMessage(result.message);
+      }
+      return result;
+    },
+    [resolvedCard, activeTemplate]
+  );
 
   const handleDownloadPress = useCallback(() => {
     if (!resolvedCard) return;
@@ -309,13 +330,14 @@ export const PreviewScreen: React.FC = () => {
         />
 
         {/* Modular Presentation Template Renderer */}
-        <CardTemplate
-          card={card}
-          template={activeTemplate}
-          showQr={true}
-          onActionPress={handleActionPress}
-          style={styles.cardTemplateWrapper}
-        />
+        <View ref={cardRef} collapsable={false} style={styles.cardTemplateWrapper}>
+          <CardTemplate
+            card={card}
+            template={activeTemplate}
+            showQr={true}
+            onActionPress={handleActionPress}
+          />
+        </View>
 
         {/* Primary Bottom Action */}
         <TouchableOpacity
@@ -412,6 +434,17 @@ export const PreviewScreen: React.FC = () => {
           visible={showExportModal}
           onClose={() => setShowExportModal(false)}
           onExport={handlePerformExport}
+          templateName={activeTemplate.toUpperCase()}
+        />
+      ) : null}
+
+      {/* Share Modal */}
+      {resolvedCard ? (
+        <ShareModal
+          visible={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          onShare={handlePerformShare}
+          publicUrl={getPublicCardUrl(resolvedCard)}
           templateName={activeTemplate.toUpperCase()}
         />
       ) : null}

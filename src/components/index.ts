@@ -17,4 +17,5 @@ export * from './QRCodeView';
 export * from './BusinessCardItem';
 export * from './PreviewActions';
 export * from './ExportModal';
+export * from './ShareModal';
 export * from './templates';

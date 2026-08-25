@@ -5,6 +5,7 @@
  */
 
 import { Share, Linking, Platform } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { BusinessCard } from '../models/card';
 
 /**
@@ -214,17 +215,19 @@ export async function openContactUrl(
   }
 }
 
+
 /**
  * Copies arbitrary text to clipboard with Web and Mobile compatibility
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text || !text.trim()) return false;
+  const cleanText = text.trim();
   try {
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
-      await navigator.clipboard.writeText(text.trim());
+      await navigator.clipboard.writeText(cleanText);
       return true;
     }
-    return true;
+    return await Clipboard.setStringAsync(cleanText);
   } catch {
     return false;
   }
