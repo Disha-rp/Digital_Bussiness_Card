@@ -16,6 +16,7 @@ export type RootStackParamList = {
   TemplateSelection: { cardTitle?: string; cardId?: string; mode?: 'create' | 'edit' } | undefined;
   EditCard: { cardTitle?: string; templateId?: string; cardId?: string } | undefined;
   Preview: { cardTitle?: string; templateId?: string; cardId?: string } | undefined;
+  QRCode: { cardTitle?: string; cardId?: string } | undefined;
   Share: { cardTitle?: string; previewUrl?: string; cardId?: string } | undefined;
 };
 

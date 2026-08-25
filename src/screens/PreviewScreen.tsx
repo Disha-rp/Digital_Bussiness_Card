@@ -174,8 +174,12 @@ export const PreviewScreen: React.FC = () => {
   }, [resolvedCard]);
 
   const handleShowQrPress = useCallback(() => {
-    setShowQrModal(true);
-  }, []);
+    if (!resolvedCard) return;
+    navigation.navigate('QRCode', {
+      cardId: resolvedCard.id,
+      cardTitle: resolvedCard.name,
+    });
+  }, [navigation, resolvedCard]);
 
   if (loading) {
     return (

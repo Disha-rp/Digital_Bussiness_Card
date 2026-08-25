@@ -20,6 +20,7 @@ import { CreateCardScreen } from '../screens/CreateCardScreen';
 import { TemplateSelectionScreen } from '../screens/TemplateSelectionScreen';
 import { EditCardScreen } from '../screens/EditCardScreen';
 import { PreviewScreen } from '../screens/PreviewScreen';
+import { QRCodeScreen } from '../screens/QRCodeScreen';
 import { ShareScreen } from '../screens/ShareScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,6 +56,7 @@ export const RootNavigator: React.FC = () => {
             <Stack.Screen name="TemplateSelection" component={TemplateSelectionScreen} />
             <Stack.Screen name="EditCard" component={EditCardScreen} />
             <Stack.Screen name="Preview" component={PreviewScreen} />
+            <Stack.Screen name="QRCode" component={QRCodeScreen} />
             <Stack.Screen name="Share" component={ShareScreen} />
           </Stack.Group>
         )}

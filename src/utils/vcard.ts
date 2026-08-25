@@ -213,3 +213,77 @@ export async function openContactUrl(
     return false;
   }
 }
+
+/**
+ * Copies arbitrary text to clipboard with Web and Mobile compatibility
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text || !text.trim()) return false;
+  try {
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(text.trim());
+      return true;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Saves or exports the QR Code image representation for the card.
+ * Strictly operates on the QR image asset and displays QR-specific error messages if unavailable.
+ */
+export async function saveQrCode(
+  card: BusinessCard
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const rawName =
+      [card.contact.firstName, card.contact.lastName].filter(Boolean).join('_') ||
+      card.name ||
+      'business_card';
+    const safeFileName = `${rawName.replace(/[^\w.-]/g, '_')}_qr.png`;
+    const qrImageUrl = card.cloud?.qrImageUrl;
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof document !== 'undefined') {
+      if (qrImageUrl) {
+        const anchor = document.createElement('a');
+        anchor.href = qrImageUrl;
+        anchor.download = safeFileName;
+        anchor.target = '_blank';
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        return { success: true, message: 'QR Code image downloaded successfully.' };
+      } else {
+        return {
+          success: false,
+          message: 'QR Code image is not available for download. Please retry.',
+        };
+      }
+    } else {
+      if (qrImageUrl) {
+        const shareRes = await Share.share({
+          title: `${card.name || 'Digital Business Card'} • QR Code`,
+          message: `QR Code Image: ${qrImageUrl}`,
+          url: qrImageUrl,
+        });
+
+        return {
+          success: shareRes.action !== Share.dismissedAction,
+          message: 'QR Code image shared successfully for saving.',
+        };
+      } else {
+        return {
+          success: false,
+          message: 'QR Code image is not available for export. Please retry.',
+        };
+      }
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || 'Failed to save QR Code image.',
+    };
+  }
+}
