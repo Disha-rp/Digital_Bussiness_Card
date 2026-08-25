@@ -1,2 +1,5 @@
-// Placeholder for utility helper functions
-export {};
+/**
+ * Utility Barrel Exports
+ */
+
+export * from './vcard';

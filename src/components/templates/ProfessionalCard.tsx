@@ -42,14 +42,14 @@ export const ProfessionalCard: React.FC<CardPresentationProps> = ({
     const phone = card.contact.phoneMobile || card.contact.phoneWork;
     if (phone) {
       if (onActionPress) onActionPress('call', phone);
-      else Linking.openURL(`tel:${phone}`);
+      else Linking.openURL(`tel:${phone}`).catch(() => {});
     }
   };
 
   const handleEmail = () => {
     if (card.contact.email) {
       if (onActionPress) onActionPress('email', card.contact.email);
-      else Linking.openURL(`mailto:${card.contact.email}`);
+      else Linking.openURL(`mailto:${card.contact.email}`).catch(() => {});
     }
   };
 
@@ -60,14 +60,14 @@ export const ProfessionalCard: React.FC<CardPresentationProps> = ({
         const url = /^https?:\/\//i.test(card.contact.website)
           ? card.contact.website
           : `https://${card.contact.website}`;
-        Linking.openURL(url);
+        Linking.openURL(url).catch(() => {});
       }
     }
   };
 
   const handleSocial = (url: string) => {
     if (onActionPress) onActionPress('social', url);
-    else Linking.openURL(url);
+    else Linking.openURL(url).catch(() => {});
   };
 
   const hasPhone = Boolean(card.contact.phoneMobile || card.contact.phoneWork);

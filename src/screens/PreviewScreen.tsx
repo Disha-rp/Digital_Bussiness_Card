@@ -1,11 +1,27 @@
 /**
- * Preview Screen
- * Renders live digital business card presentation for the selected QRTRAC card.
- * Resolves card dynamically via route.params.cardId and CardContext.
+ * Preview Screen (Phase 9)
+ * Complete Digital Business Card Live Presentation Screen.
+ * Features:
+ * 1. Single presentation renderer via <CardTemplate /> (Professional, Modern, Minimal)
+ * 2. Real-time in-memory template switching via <TemplatePicker /> (0 network mutations)
+ * 3. Dynamic card resolution from QRTRAC API / local store
+ * 4. Interactive contact links (phone dialer, mailto, website, social links) with safe fallbacks
+ * 5. PreviewActions bar: Edit, Share, Download (.vcf), Enlarged QR Modal
+ * 6. Zero QRTRAC API mutations during preview interactions
+ * 7. Fully responsive across 360x640, 375x667, 412x915, 430x932
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  Alert,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,16 +30,23 @@ import { useCards } from '../store';
 import { qrService } from '../services/qr.service';
 import { BusinessCard } from '../models/card';
 import { CardTemplateId } from '../models/template';
-import { CARD_TEMPLATES } from '../theme/templates';
-import { colors, theme } from '../theme';
+import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { borderRadius } from '../theme/borderRadius';
+import { shadows } from '../theme/shadows';
 import {
-  Avatar,
   ErrorState,
   LoadingIndicator,
   QRCodeView,
   CardTemplate,
   TemplatePicker,
+  PreviewActions,
 } from '../components';
+import {
+  downloadVCard,
+  shareBusinessCard,
+  openContactUrl,
+} from '../utils/vcard';
 
 export const PreviewScreen: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
@@ -31,11 +54,26 @@ export const PreviewScreen: React.FC = () => {
   const { cards, selectedCard } = useCards();
 
   const cardId = route.params?.cardId;
+  const initialTemplate = route.params?.templateId;
+
   const [resolvedCard, setResolvedCard] = useState<BusinessCard | null>(null);
-  const [activeTemplate, setActiveTemplate] = useState<CardTemplateId>('modern');
+  const [activeTemplate, setActiveTemplate] = useState<CardTemplateId>(
+    (initialTemplate as CardTemplateId) || 'modern'
+  );
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showQrModal, setShowQrModal] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Auto-dismiss toast notification
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  // 1. Resolve latest card data from memory or server
   useEffect(() => {
     let isMounted = true;
 
@@ -43,54 +81,38 @@ export const PreviewScreen: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // 1. Try finding in memory cards list
+      let found: BusinessCard | null = null;
+
+      // 1. Try finding in context store
       if (cardId) {
-        const found = cards.find((c) => c.id === cardId);
-        if (found) {
-          if (isMounted) {
-            setResolvedCard(found);
-            setActiveTemplate(found.template || 'modern');
-            setLoading(false);
-          }
-          return;
-        }
+        found = cards.find((c) => c.id === cardId) || null;
       }
 
-      // 2. Try selectedCard from context if matches
-      if (selectedCard && (!cardId || selectedCard.id === cardId)) {
-        if (isMounted) {
-          setResolvedCard(selectedCard);
-          setActiveTemplate(selectedCard.template || 'modern');
-          setLoading(false);
-        }
-        return;
+      if (!found && selectedCard && (!cardId || selectedCard.id === cardId)) {
+        found = selectedCard;
       }
 
-      // 3. If cardId provided but not in memory, fetch from QRTRAC API
+      // 2. Fetch fresh from QRTRAC API if not found or if cardId provided
       if (cardId) {
         try {
           const res = await qrService.getCard(cardId);
-          if (isMounted) {
-            if (res.success && res.data) {
-              setResolvedCard(res.data);
-              setActiveTemplate(res.data.template || 'modern');
-            } else {
-              setError(res.message || 'Card could not be loaded.');
-            }
-            setLoading(false);
+          if (res.success && res.data) {
+            found = res.data;
           }
         } catch {
-          if (isMounted) {
-            setError('Failed to load card from server.');
-            setLoading(false);
-          }
+          // Fallback to found
         }
-        return;
       }
 
-      // 4. No cardId provided and no cards in memory
       if (isMounted) {
-        setError('Card could not be loaded.');
+        if (found) {
+          setResolvedCard(found);
+          if (!initialTemplate && found.template) {
+            setActiveTemplate(found.template);
+          }
+        } else {
+          setError('Card could not be loaded.');
+        }
         setLoading(false);
       }
     };
@@ -100,7 +122,60 @@ export const PreviewScreen: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [cardId, cards, selectedCard]);
+  }, [cardId, cards, selectedCard, initialTemplate]);
+
+  // 2. Handle interactive contact actions
+  const handleActionPress = useCallback(
+    async (action: 'call' | 'email' | 'website' | 'social', target?: string) => {
+      if (!target) return;
+      const opened = await openContactUrl(action, target);
+      if (!opened) {
+        const errorText = `Unable to open ${action} link: ${target}`;
+        if (Platform.OS === 'web') {
+          setToastMessage(errorText);
+        } else {
+          Alert.alert('Action Unavailable', errorText);
+        }
+      }
+    },
+    []
+  );
+
+  // 3. Preview Action Handlers
+  const handleEditPress = useCallback(() => {
+    if (!resolvedCard) return;
+    navigation.navigate('EditCard', {
+      cardId: resolvedCard.id,
+      cardTitle: resolvedCard.name,
+      templateId: activeTemplate,
+    });
+  }, [navigation, resolvedCard, activeTemplate]);
+
+  const handleSharePress = useCallback(async () => {
+    if (!resolvedCard) return;
+    const res = await shareBusinessCard(resolvedCard);
+    if (res.message) {
+      setToastMessage(res.message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Share Card', res.message);
+      }
+    }
+  }, [resolvedCard]);
+
+  const handleDownloadPress = useCallback(async () => {
+    if (!resolvedCard) return;
+    const res = await downloadVCard(resolvedCard);
+    if (res.message) {
+      setToastMessage(res.message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Save vCard', res.message);
+      }
+    }
+  }, [resolvedCard]);
+
+  const handleShowQrPress = useCallback(() => {
+    setShowQrModal(true);
+  }, []);
 
   if (loading) {
     return (
@@ -142,37 +217,68 @@ export const PreviewScreen: React.FC = () => {
   }
 
   const card = resolvedCard;
-  const fullName = [card.contact.firstName, card.contact.lastName].filter(Boolean).join(' ') || card.name;
   const publicUrl =
     card.cloud?.publicUrl ||
-    (card.cloud?.displayId ? `https://qrtrac.link/${card.cloud.displayId}` : undefined);
+    (card.cloud?.displayId
+      ? `https://qrtrac.link/${card.cloud.displayId}`
+      : `https://qrtrac.me/${card.id}`);
+
+  const hasQr = Boolean(
+    card.cloud?.qrImageUrl || card.cloud?.displayId || card.cloud?.publicUrl || card.id
+  );
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} testID="preview-back-btn">
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+          testID="preview-back-btn"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Card Preview</Text>
         <TouchableOpacity
           style={styles.editHeaderBtn}
-          onPress={() =>
-            navigation.navigate('EditCard', {
-              cardId: card.id,
-              cardTitle: card.name,
-              templateId: activeTemplate,
-            })
-          }
+          onPress={handleEditPress}
+          testID="preview-header-edit-btn"
+          accessibilityLabel="Edit this card"
         >
-          <Ionicons name="create-outline" size={20} color={colors.primaryLight} />
+          <Ionicons name="create-outline" size={18} color={colors.primary} />
+          <Text style={styles.editHeaderBtnText}>Edit</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionHeader}>Live Card Presentation</Text>
-        <Text style={styles.sectionSub}>Dynamic QRTRAC Digital Business Card</Text>
+      {/* Floating Toast Notification */}
+      {toastMessage ? (
+        <View style={styles.toastBanner}>
+          <Ionicons name="information-circle" size={16} color="#FFFFFF" />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      ) : null}
 
-        {/* Interactive Template Selector */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.sectionHeader}>Live Card Presentation</Text>
+        <Text style={styles.sectionSub}>
+          Real-time preview of how recipients see and interact with your digital business card.
+        </Text>
+
+        {/* Separated Preview Actions Bar */}
+        <PreviewActions
+          onEdit={handleEditPress}
+          onShare={handleSharePress}
+          onDownload={handleDownloadPress}
+          onShowQr={handleShowQrPress}
+          hasQr={hasQr}
+          style={styles.actionsBar}
+        />
+
+        {/* Interactive Template Selector (0 API mutations) */}
         <TemplatePicker
           selectedTemplate={activeTemplate}
           onSelectTemplate={(tmpl) => setActiveTemplate(tmpl)}
@@ -185,26 +291,98 @@ export const PreviewScreen: React.FC = () => {
           card={card}
           template={activeTemplate}
           showQr={true}
+          onActionPress={handleActionPress}
           style={styles.cardTemplateWrapper}
         />
 
-        {/* Share Action */}
+        {/* Primary Bottom Action */}
         <TouchableOpacity
           style={styles.primaryButton}
           activeOpacity={0.8}
-          onPress={() =>
-            navigation.navigate('Share', {
-              cardId: card.id,
-              cardTitle: fullName,
-              previewUrl: publicUrl,
-            })
-          }
+          onPress={handleSharePress}
           testID="proceed-to-share-btn"
+          accessibilityLabel="Share digital business card"
         >
-          <Text style={styles.buttonText}>Proceed to Share</Text>
-          <Ionicons name="share-social-outline" size={18} color="#FFFFFF" style={{ marginLeft: 6 }} />
+          <Text style={styles.buttonText}>Share Business Card</Text>
+          <Ionicons
+            name="share-social-outline"
+            size={18}
+            color="#FFFFFF"
+            style={{ marginLeft: 8 }}
+          />
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Enlarged QR Code Modal */}
+      <Modal
+        visible={showQrModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowQrModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Scan to Connect</Text>
+              <TouchableOpacity
+                onPress={() => setShowQrModal(false)}
+                style={styles.modalCloseBtn}
+                testID="close-qr-modal-btn"
+                accessibilityLabel="Close QR view"
+              >
+                <Ionicons name="close" size={20} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSub}>
+              Point any mobile camera at the QR code to instantly view and save this card.
+            </Text>
+
+            <View style={styles.enlargedQrContainer}>
+              <QRCodeView
+                imageUrl={card.cloud?.qrImageUrl}
+                value={publicUrl}
+                size={200}
+                backgroundColor="#FFFFFF"
+                color="#0F172A"
+              />
+            </View>
+
+            {publicUrl ? (
+              <View style={styles.urlDisplayBox}>
+                <Ionicons name="globe-outline" size={14} color={colors.primary} />
+                <Text style={styles.urlDisplayText} numberOfLines={1}>
+                  {publicUrl}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity
+                style={styles.modalShareBtn}
+                onPress={() => {
+                  setShowQrModal(false);
+                  handleSharePress();
+                }}
+                activeOpacity={0.7}
+                testID="modal-share-link-btn"
+              >
+                <Ionicons name="share-outline" size={16} color={colors.primary} />
+                <Text style={styles.modalShareBtnText}>Share Link</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalDoneBtn}
+                onPress={() => setShowQrModal(false)}
+                activeOpacity={0.7}
+                testID="modal-done-btn"
+              >
+                <Text style={styles.modalDoneBtnText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -218,41 +396,71 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   backBtn: {
     padding: 8,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: borderRadius.md,
     backgroundColor: '#F1F5F9',
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   editHeaderBtn: {
-    padding: 8,
-    borderRadius: theme.borderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.md,
     backgroundColor: '#EFF6FF',
     borderWidth: 1,
     borderColor: '#DBEAFE',
+    gap: 4,
+  },
+  editHeaderBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  toastBanner: {
+    position: 'absolute',
+    top: 60,
+    left: spacing.lg,
+    right: spacing.lg,
+    zIndex: 999,
+    backgroundColor: '#0F172A',
+    borderRadius: borderRadius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    ...shadows.lg,
+  },
+  toastText: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: spacing.lg,
     backgroundColor: colors.background,
   },
   content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxl,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl * 2,
   },
   sectionHeader: {
     fontSize: 20,
@@ -264,104 +472,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
-    marginBottom: theme.spacing.md,
+    marginBottom: spacing.md,
+    lineHeight: 18,
+  },
+  actionsBar: {
+    marginBottom: spacing.md,
   },
   templatePickerSection: {
-    marginBottom: theme.spacing.md,
+    marginBottom: spacing.md,
   },
   cardTemplateWrapper: {
-    marginBottom: theme.spacing.lg,
-  },
-  previewBox: {
-    backgroundColor: colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1.5,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  avatar: {
-    marginRight: theme.spacing.md,
-  },
-  cardDetails: {
-    flex: 1,
-  },
-  cardName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  cardRole: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  cardCompany: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  contactSection: {
-    gap: 6,
-    paddingVertical: theme.spacing.sm,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    marginBottom: theme.spacing.md,
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  contactText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  qrSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.sm,
-  },
-  hostedQrContainer: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    borderRadius: theme.borderRadius.md,
-  },
-  hostedQrImage: {
-    width: 140,
-    height: 140,
-  },
-  qrCaption: {
-    fontSize: 10,
-    color: '#6B7280',
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexWrap: 'wrap',
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: colors.surfaceElevated,
-  },
-  badgeText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '600',
+    marginBottom: spacing.lg,
   },
   primaryButton: {
     flexDirection: 'row',
@@ -369,11 +490,114 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.primary,
     paddingVertical: 14,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: borderRadius.lg,
+    ...shadows.md,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.xxl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    ...shadows.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: spacing.xs,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 16,
+  },
+  enlargedQrContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    ...shadows.sm,
+  },
+  urlDisplayBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.full,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 6,
+    marginBottom: spacing.lg,
+    maxWidth: '100%',
+  },
+  urlDisplayText: {
+    fontSize: 12,
+    color: colors.textPrimary,
     fontWeight: '600',
+  },
+  modalActionsRow: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: spacing.sm,
+  },
+  modalShareBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    gap: 6,
+  },
+  modalShareBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  modalDoneBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+  },
+  modalDoneBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
