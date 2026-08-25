@@ -40,9 +40,9 @@ import {
 } from '../components';
 import {
   shareBusinessCard,
-  saveQrCode,
   copyToClipboard,
-} from '../utils/vcard';
+  exportQrImage,
+} from '../utils';
 
 export const QRCodeScreen: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
@@ -135,11 +135,11 @@ export const QRCodeScreen: React.FC = () => {
 
   const handleSaveQr = useCallback(async () => {
     if (!resolvedCard) return;
-    const res = await saveQrCode(resolvedCard);
+    const res = await exportQrImage(resolvedCard);
     if (res.message) {
       setToastMessage(res.message);
       if (Platform.OS !== 'web') {
-        Alert.alert('Save QR', res.message);
+        Alert.alert(res.success ? 'Saved successfully' : 'Unable to save card', res.message);
       }
     }
   }, [resolvedCard]);

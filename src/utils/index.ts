@@ -3,3 +3,4 @@
  */
 
 export * from './vcard';
+export * from './export';

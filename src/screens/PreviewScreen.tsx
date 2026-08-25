@@ -41,12 +41,16 @@ import {
   CardTemplate,
   TemplatePicker,
   PreviewActions,
+  ExportModal,
 } from '../components';
 import {
   downloadVCard,
   shareBusinessCard,
   openContactUrl,
-} from '../utils/vcard';
+  exportBusinessCard,
+  ExportFormat,
+  ExportResult,
+} from '../utils';
 
 export const PreviewScreen: React.FC = () => {
   const navigation = useNavigation<RootNavigationProp>();
@@ -63,6 +67,7 @@ export const PreviewScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Auto-dismiss toast notification
@@ -162,16 +167,29 @@ export const PreviewScreen: React.FC = () => {
     }
   }, [resolvedCard]);
 
-  const handleDownloadPress = useCallback(async () => {
+  const handleDownloadPress = useCallback(() => {
     if (!resolvedCard) return;
-    const res = await downloadVCard(resolvedCard);
-    if (res.message) {
-      setToastMessage(res.message);
-      if (Platform.OS !== 'web') {
-        Alert.alert('Save vCard', res.message);
-      }
-    }
+    setShowExportModal(true);
   }, [resolvedCard]);
+
+  const handlePerformExport = useCallback(
+    async (format: ExportFormat): Promise<ExportResult> => {
+      if (!resolvedCard) {
+        return {
+          success: false,
+          message: 'Unable to save card',
+          format,
+        };
+      }
+
+      const result = await exportBusinessCard(resolvedCard, format, activeTemplate);
+      if (result.message) {
+        setToastMessage(result.message);
+      }
+      return result;
+    },
+    [resolvedCard, activeTemplate]
+  );
 
   const handleShowQrPress = useCallback(() => {
     if (!resolvedCard) return;
@@ -387,6 +405,16 @@ export const PreviewScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Download & Export Modal */}
+      {resolvedCard ? (
+        <ExportModal
+          visible={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={handlePerformExport}
+          templateName={activeTemplate.toUpperCase()}
+        />
+      ) : null}
     </SafeAreaView>
   );
 };

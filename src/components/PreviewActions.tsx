@@ -77,7 +77,7 @@ export const PreviewActions: React.FC<PreviewActionsProps> = ({
         <View style={[styles.iconCircle, { backgroundColor: '#F5F3FF' }]}>
           <Ionicons name="download-outline" size={20} color="#7C3AED" />
         </View>
-        <Text style={styles.actionLabel}>Save vCard</Text>
+        <Text style={styles.actionLabel}>Export</Text>
       </TouchableOpacity>
 
       {/* Enlarged QR Code Action */}
