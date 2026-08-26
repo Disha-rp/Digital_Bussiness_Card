@@ -10,6 +10,7 @@ export type ApiErrorType =
   | 'FORBIDDEN_ERROR'
   | 'NOT_FOUND_ERROR'
   | 'VALIDATION_ERROR'
+  | 'CONFLICT_ERROR'
   | 'RATE_LIMIT_ERROR'
   | 'SERVER_ERROR'
   | 'UNKNOWN_ERROR';

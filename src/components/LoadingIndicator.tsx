@@ -23,7 +23,13 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
   style,
 }) => {
   return (
-    <View style={[styles.container, fullScreen && styles.fullScreen, style]}>
+    <View
+      style={[styles.container, fullScreen && styles.fullScreen, style]}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel={message || 'Loading content, please wait'}
+      accessibilityLiveRegion="polite"
+    >
       <ActivityIndicator size={size} color={color} />
       {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>

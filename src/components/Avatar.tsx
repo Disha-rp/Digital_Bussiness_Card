@@ -68,6 +68,9 @@ export const Avatar: React.FC<AvatarProps> = ({
         },
         style,
       ]}
+      accessible={true}
+      accessibilityRole="image"
+      accessibilityLabel={name ? `${name}'s profile avatar` : 'Profile avatar'}
     >
       {shouldRenderImage ? (
         <Image

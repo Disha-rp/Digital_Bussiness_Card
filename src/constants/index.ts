@@ -37,14 +37,29 @@ export const getEnvCredentials = (): QrTracCredentials | null => {
   const isPlaceholder = (val?: string) =>
     !val || val.trim() === '' || val.startsWith('your_') || val.includes('placeholder');
 
-  if (!isPlaceholder(teamId) && !isPlaceholder(clientId) && !isPlaceholder(clientSecret)) {
-    return {
-      teamId: teamId!.trim(),
-      clientId: clientId!.trim(),
-      clientSecret: clientSecret!.trim(),
-      baseUrl: baseUrl.trim(),
-    };
+  const isValid =
+    !isPlaceholder(teamId) && !isPlaceholder(clientId) && !isPlaceholder(clientSecret);
+
+  const result: QrTracCredentials | null = isValid
+    ? {
+        teamId: teamId!.trim(),
+        clientId: clientId!.trim(),
+        clientSecret: clientSecret!.trim(),
+        baseUrl: baseUrl.trim(),
+      }
+    : null;
+
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    console.log('[QRTRAC Diagnostic] Credential Resolution:');
+    console.log('  - nonNullCredentials:', result !== null);
+    console.log('  - teamIdExists:', Boolean(teamId && teamId.trim()));
+    console.log('  - teamIdLength:', teamId ? teamId.trim().length : 0);
+    console.log('  - clientIdExists:', Boolean(clientId && clientId.trim()));
+    console.log('  - clientIdLength:', clientId ? clientId.trim().length : 0);
+    console.log('  - clientSecretExists:', Boolean(clientSecret && clientSecret.trim()));
+    console.log('  - clientSecretLength:', clientSecret ? clientSecret.trim().length : 0);
+    console.log('  - resolvedBaseUrl:', baseUrl ? baseUrl.trim() : 'NONE');
   }
 
-  return null;
+  return result;
 };

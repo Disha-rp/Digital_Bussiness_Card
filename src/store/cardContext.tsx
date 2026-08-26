@@ -4,11 +4,12 @@
  * selected card, and editor draft.
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { BusinessCard, CardEditorDraft } from '../models/card';
 import { CardTemplateId } from '../models/template';
 import { ApiError, PaginationMeta } from '../models/api';
 import { qrService } from '../services/qr.service';
+import { defaultApiClient } from '../api/client';
 import { useAuth } from './authContext';
 
 export interface CardFilter {
@@ -58,7 +59,7 @@ const DEFAULT_PAGINATION: PaginationMeta = {
 const CardContext = createContext<CardContextValue | undefined>(undefined);
 
 export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, organization } = useAuth();
+  const { isAuthenticated, organization, status, isLoading } = useAuth();
 
   const [cards, setCardsState] = useState<BusinessCard[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -75,12 +76,44 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [pagination, setPagination] = useState<PaginationMeta>(DEFAULT_PAGINATION);
   const [error, setError] = useState<ApiError | null>(null);
 
+  // Track last fetched team to prevent duplicate auto-fetch during context re-renders
+  const lastFetchedTeamRef = useRef<string | null>(null);
+
   /**
-   * Core API fetcher implementing pagination, search, and cached data preservation
+   * Helper to verify that active credentials with all 3 required fields exist on ApiClient
+   */
+  const hasClientCredentials = useCallback(() => {
+    const creds = defaultApiClient.getCredentials();
+    return Boolean(
+      creds &&
+      creds.teamId && creds.teamId.trim() &&
+      creds.clientId && creds.clientId.trim() &&
+      creds.clientSecret && creds.clientSecret.trim()
+    );
+  }, []);
+
+  const isAuthReady = useMemo(() => {
+    return (
+      !isLoading &&
+      status === 'authenticated' &&
+      isAuthenticated &&
+      Boolean(organization?.teamId && organization.teamId.trim()) &&
+      hasClientCredentials()
+    );
+  }, [isLoading, status, isAuthenticated, organization?.teamId, hasClientCredentials]);
+
+  /**
+   * Core API fetcher implementing session readiness guard, pagination, search, and cached data preservation
    */
   const fetchCards = useCallback(
     async (page = 1, searchQuery = '', isRefresh = false) => {
-      if (!isAuthenticated) return;
+      const teamId = organization?.teamId?.trim();
+      const credsReady = hasClientCredentials();
+
+      // Guard: strictly abort if session is restoring, unauthenticated, teamId missing, or client credentials missing
+      if (!isAuthenticated || status !== 'authenticated' || isLoading || !teamId || !credsReady) {
+        return;
+      }
 
       const isFirstPage = page === 1;
       if (isRefresh) {
@@ -94,7 +127,6 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
 
       try {
-        const teamId = organization?.teamId;
         const response = await qrService.listCards(teamId, {
           page,
           limit: 10,
@@ -134,19 +166,24 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoadingMoreMore(false);
       }
     },
-    [isAuthenticated, organization?.teamId]
+    [isAuthenticated, status, isLoading, organization?.teamId, hasClientCredentials]
   );
 
-  // Initial fetch when authenticated
+  // Initial fetch strictly synchronized with authenticated session readiness
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchCards(1, filter.search);
+    if (isAuthReady) {
+      const currentTeamId = organization?.teamId?.trim() || '';
+      if (lastFetchedTeamRef.current !== currentTeamId) {
+        lastFetchedTeamRef.current = currentTeamId;
+        fetchCards(1, filter.search);
+      }
     } else {
+      lastFetchedTeamRef.current = null;
       setCardsState([]);
       setPagination(DEFAULT_PAGINATION);
       setError(null);
     }
-  }, [isAuthenticated, fetchCards]);
+  }, [isAuthReady, organization?.teamId, fetchCards, filter.search]);
 
   const refreshCards = useCallback(async () => {
     await fetchCards(1, filter.search, true);

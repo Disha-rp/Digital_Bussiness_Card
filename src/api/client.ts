@@ -25,7 +25,10 @@ export interface RateLimitInfo {
   resetTime?: number;
 }
 
+let nextClientId = 1;
+
 export class ApiClient {
+  public readonly instanceId: string;
   private defaultBaseUrl: string;
   private defaultTimeoutMs: number;
   private maxRetries: number;
@@ -38,13 +41,32 @@ export class ApiClient {
     maxRetries?: number;
     initialCredentials?: QrTracCredentials | null;
   } = {}) {
+    this.instanceId = `Client#${nextClientId++}`;
     this.defaultBaseUrl = config.baseUrl || 'https://api.qrtrac.com/api';
     this.defaultTimeoutMs = config.timeoutMs !== undefined ? config.timeoutMs : 20000;
     this.maxRetries = config.maxRetries !== undefined ? config.maxRetries : 2;
-    this.activeCredentials = config.initialCredentials !== undefined ? config.initialCredentials : getEnvCredentials();
+
+    const envCreds = getEnvCredentials();
+    const hasInitial = config.initialCredentials !== undefined;
+    this.activeCredentials = hasInitial ? (config.initialCredentials ?? null) : envCreds;
+
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.log(`[ApiClient Lifecycle] Instantiated ${this.instanceId}:`);
+      console.log(`  - receivedInitialCredentials: ${hasInitial}`);
+      console.log(`  - initialCredentialsNonNull: ${config.initialCredentials !== null && config.initialCredentials !== undefined}`);
+      console.log(`  - getEnvCredentialsNonNullAtConstruction: ${envCreds !== null}`);
+      console.log(`  - activeCredentialsPresentAtConstruction: ${this.activeCredentials !== null}`);
+    }
   }
 
   public setCredentials(credentials: QrTracCredentials | null): void {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.log(`[ApiClient Lifecycle] ${this.instanceId}.setCredentials called:`);
+      console.log(`  - credentialsNonNull: ${credentials !== null}`);
+      console.log(`  - teamIdPresent: ${Boolean(credentials?.teamId)}`);
+      console.log(`  - clientIdPresent: ${Boolean(credentials?.clientId)}`);
+      console.log(`  - clientSecretPresent: ${Boolean(credentials?.clientSecret)}`);
+    }
     this.activeCredentials = credentials;
   }
 
@@ -95,6 +117,18 @@ export class ApiClient {
         if (creds.teamId && creds.teamId.trim()) headers['x-request-team-id'] = creds.teamId.trim();
         if (creds.clientId && creds.clientId.trim()) headers['x-request-client-id'] = creds.clientId.trim();
         if (creds.clientSecret && creds.clientSecret.trim()) headers['x-request-client-secret'] = creds.clientSecret.trim();
+      }
+
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[QRTRAC Diagnostic] Request Headers Prepared:');
+        console.log('  - nonNullCredentials:', creds !== null);
+        console.log('  - teamIdExists:', Boolean(headers['x-request-team-id']));
+        console.log('  - teamIdLength:', headers['x-request-team-id']?.length || 0);
+        console.log('  - clientIdExists:', Boolean(headers['x-request-client-id']));
+        console.log('  - clientIdLength:', headers['x-request-client-id']?.length || 0);
+        console.log('  - clientSecretExists:', Boolean(headers['x-request-client-secret']));
+        console.log('  - clientSecretLength:', headers['x-request-client-secret']?.length || 0);
+        console.log('  - resolvedBaseUrl:', creds?.baseUrl || this.defaultBaseUrl);
       }
     }
 
@@ -163,16 +197,30 @@ export class ApiClient {
     } else if (statusCode === 404) {
       type = 'NOT_FOUND_ERROR';
       message = 'The requested card or QR code was not found.';
+    } else if (statusCode === 409) {
+      type = 'CONFLICT_ERROR';
+      message = rawMessage || 'A card with this configuration or display ID already exists. Please resolve the conflict and try again.';
     } else if (statusCode === 429) {
       type = 'RATE_LIMIT_ERROR';
       message = 'Rate limit reached. Please wait a moment before sending more requests.';
       isRetryable = true;
       retryAfterSeconds = 5;
+    } else if (statusCode === 502 || statusCode === 503) {
+      type = 'SERVER_ERROR';
+      message = 'QRTRAC service is temporarily offline or unavailable. Please try again in a few moments.';
+      isRetryable = true;
     } else if (statusCode && statusCode >= 500) {
       type = 'SERVER_ERROR';
       message = 'QRTRAC server is temporarily unavailable. Please try again later.';
       isRetryable = true;
-    } else if (error instanceof TypeError || (error as Error)?.name === 'AbortError') {
+    } else if (
+      error instanceof TypeError ||
+      (error as Error)?.name === 'AbortError' ||
+      (error as Error)?.message?.toLowerCase().includes('network') ||
+      (error as Error)?.message?.toLowerCase().includes('failed to fetch') ||
+      (error as Error)?.message?.toLowerCase().includes('enotfound') ||
+      (error as Error)?.message?.toLowerCase().includes('econnrefused')
+    ) {
       type = 'NETWORK_ERROR';
       message =
         (error as Error)?.name === 'AbortError'
@@ -223,6 +271,19 @@ export class ApiClient {
     const headers = this.buildHeaders(fetchOptions.headers, credentials, bypassAuth);
     this.log(`→ ${fetchOptions.method || 'GET'} ${cleanEndpoint}`);
 
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.log('[QRTRAC Auth Diagnostic]');
+      console.log(`  - endpoint path: ${cleanEndpoint}`);
+      console.log(`  - HTTP method: ${fetchOptions.method || 'GET'}`);
+      console.log(`  - activeCredentialsPresent: ${this.activeCredentials !== null}`);
+      console.log(`  - credentialsOverridePresent: ${Boolean(credentials)}`);
+      console.log(`  - bypassAuth: ${Boolean(bypassAuth)}`);
+      console.log(`  - authHeaderNamesPresent:`);
+      console.log(`    - team header: ${Boolean(headers['x-request-team-id'])}`);
+      console.log(`    - client ID header: ${Boolean(headers['x-request-client-id'])}`);
+      console.log(`    - client secret header: ${Boolean(headers['x-request-client-secret'])}`);
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -252,6 +313,32 @@ export class ApiClient {
         const effectiveStatus = !response.ok ? response.status : 400;
         const normalized = this.normalizeError(null, effectiveStatus, json);
         this.logError(`← ${response.status} ${cleanEndpoint}: ${normalized.message}`);
+
+        if (
+          (effectiveStatus === 401 ||
+            response.status === 401 ||
+            response.status === 403 ||
+            normalized.type === 'AUTHENTICATION_ERROR' ||
+            hasEnvelopeError) &&
+          typeof __DEV__ !== 'undefined' &&
+          __DEV__
+        ) {
+          const respSuccess =
+            json && typeof json === 'object' && 'success' in (json as Record<string, unknown>)
+              ? (json as { success?: boolean }).success
+              : undefined;
+          const respMessage =
+            json && typeof json === 'object' && 'message' in (json as Record<string, unknown>)
+              ? (json as { message?: string }).message
+              : undefined;
+
+          console.log('[QRTRAC Auth Failure Diagnostic]');
+          console.log(`  - HTTP status: ${response.status}`);
+          console.log(`  - response success boolean: ${respSuccess}`);
+          console.log(`  - response message: ${respMessage || normalized.message}`);
+          console.log(`  - endpoint path: ${cleanEndpoint}`);
+          console.log(`  - HTTP method: ${fetchOptions.method || 'GET'}`);
+        }
 
         // Retry with exponential backoff if retryable and under maxRetries
         if (normalized.isRetryable && retryCount < this.maxRetries) {

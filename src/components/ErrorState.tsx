@@ -25,7 +25,13 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   style,
 }) => {
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[styles.container, style]}
+      accessible={true}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="assertive"
+      accessibilityLabel={`${title}. ${message}`}
+    >
       <View style={styles.iconCircle}>
         <Ionicons name="alert-circle-outline" size={36} color={colors.error} />
       </View>
